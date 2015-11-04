@@ -23,8 +23,9 @@ if [ $LOCKED -eq 0 ]; then
     . /app/runners/$RUNNER
     END=$(date +"%Y-%m-%dT%H:%M:%SZ")
     echo "[$JOB] $OUTPUT @ [$EXIT_CODE] @ $END"
-    if [ $ALERTER ]; then
-        . /app/alerters/$ALERTER
+
+    if [ "$REAP" == true ] ; then
+      . /app/reapers/$RUNNER
     fi
 fi
 

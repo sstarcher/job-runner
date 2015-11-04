@@ -37,9 +37,10 @@ RUN curl -SL -o /app/lockers/cronsul-cleanup -z /app/lockers/cronsul-cleanup htt
 RUN curl -SL -o /app/lockers/cronsul -z /app/lockers/cronsul https://raw.githubusercontent.com/sstarcher/cronsul/master/cronsul &&\
     chmod +x /app/lockers/cronsul
 RUN mkdir /app/compose
+RUN mv /app/reaper_cron /etc/cron.d/
 
 ONBUILD ADD jobs jobs
-ONBUILD RUN ./processor/python.py jobs &&\
+ONBUILD RUN ./processor/python.py /app/jobs &&\
     cp /app/cron/* /etc/cron.d/ &&\
     cp /app/default/* /etc/default/
 
