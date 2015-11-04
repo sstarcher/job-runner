@@ -1,5 +1,6 @@
 #!/bin/bash
 # Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
+export KUBERNETES_MASTER
 K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
 
 sed -e "0,/$JOB/{s/$JOB/$K8S_JOB_LOWER/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
