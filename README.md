@@ -20,6 +20,7 @@ Docker image: [https://registry.hub.docker.com/u/sstarcher/job-runner/]
 ### Run Methods
 * Cron
   * If ran with no command argument it will start in cron mode and run on the cron schedule.  
+  * Cron functionality can be disabled for an entire jobs yaml file by adding `SCHEDULED` under the configuration for a job yaml
 * Single Job
   * If a job name is specified it will run the job, tail the logs, and exit when the job is finished. 
   * Lockers and Alerters are disabled in this mode

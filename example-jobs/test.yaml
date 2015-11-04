@@ -1,6 +1,7 @@
 ---
 Configuration: #This block is used to set environment variables that are used by the job runner scripts themselves
   TEST: 'TEST'
+  #SCHEDULE: nil #The SCHEDULED key will disable cron based job scheduling for everything in this job
 
 # Top level keys are used for groupings
 # All 
