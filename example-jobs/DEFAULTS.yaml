@@ -1,0 +1,5 @@
+#This file can not contain job
+#All of the top level keys in this file are interested into each job
+command: echo $job
+restart: 'no'
+image: debian:jessie

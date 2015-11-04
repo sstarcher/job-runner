@@ -1,0 +1,36 @@
+#!/bin/bash
+JOB=$1
+env | grep -v 'affinity:container' > /tmp/derp
+source /etc/default/runner
+source /etc/default/$JOB
+source /tmp/derp
+
+#Ensure we have a lock to run
+case "$LOCKER" in
+    consul)
+        export CONSUL_HOST; /app/lockers/cronsul $JOB true #Run this in a subshell unlike everything else
+        LOCKED=$?
+        ;;
+    *)
+      echo "[$JOB] Skipping lock check"
+      LOCKED=0
+esac
+
+if [ $LOCKED -eq 0 ]; then
+    #Run our commands
+    START=$(date +"%Y-%m-%dT%H:%M:%SZ")
+    echo "[$JOB] Running @ $START"
+    . /app/runners/$RUNNER
+    END=$(date +"%Y-%m-%dT%H:%M:%SZ")
+    echo "[$JOB] $OUTPUT @ [$EXIT_CODE] @ $END"
+    if [ $ALERTER ]; then
+        . /app/alerters/$ALERTER
+    fi
+fi
+
+case "$LOCKER" in
+    consul)
+        export CONSUL_HOST; /app/lockers/cronsul-cleanup > /dev/null
+        ;;
+    *)
+esac

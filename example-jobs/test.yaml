@@ -1,0 +1,24 @@
+---
+Configuration: #This block is used to set environment variables that are used by the job runner scripts themselves
+  TEST: 'TEST'
+
+# Top level keys are used for groupings
+# All 
+CronExamples: #Every value directly under this level are inherited by the jobs
+  image: debian:jessie #This value is overriding what is set in the DEFAULTS.yaml
+  #The $job key is a unique value that gets injected in based off of the unique key of the job
+  command: echo $job 
+  Jobs: #The actual jobs are always specified under a key named Jobs
+    - EveryMinute:
+        time: '* * * * *'
+    - SingleLine: '* * * * *' # If the job does not define a hash we assume this is the cron expression
+    - MultipleValues: 
+        time: '* * * * *'
+        command: echo $job $job #This value overrides what is set above in the root CronExamples
+
+
+# This is just a secondary grouping
+# This job inherits and uses the defaults specified in DEFAULTS.yaml
+TestDefaults:
+  Jobs:
+    - DefaultTest: '* * * * *'

@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+RUNTIME_CRONS=/opt/crons
+if [ -d "$RUNTIME_CRONS" ]; then
+    ./processor/python.py $RUNTIME_CRONS
+    cp /app/cron/* /etc/cron.d/
+    cp /app/default/* /etc/default/  
+fi
+
+env | grep -v 'affinity:container' > /etc/default/runner
+if [ -z $1 ]; then
+    echo 'Running cron jobs'
+    chmod 0644 /etc/cron.d/*
+    dockerize -stdout /var/log/cron.log cron -f
+else
+    export ALERTER=''
+    export LOCKER=''
+    export FOLLOW=true
+    /app/processor/runner $1
+    exit
+fi

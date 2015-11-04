@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+import yaml
+import sys
+from string import Template
+import os
+from os.path import isfile, join, splitext
+import copy
+
+def load(yaml_file):
+    f = open(yaml_file)
+    data = yaml.safe_load(f)
+    f.close()
+    return data
+
+def validate(yaml_doc):
+    return
+    #TODO validate all the things
+    #TODO consider using pykwalify
+    #TODO validate cron time format
+    #TODO validate job name works for K8S aka no _
+    #sys.exit(1)
+
+def substitute_all(values, string):
+    if isinstance(string, str):
+        template = Template(string)
+        return template.safe_substitute(values)
+    else:
+        return string
+
+def merge(source, destination):
+    """
+    Recursive map merge
+    """
+    for key, value in source.items():
+        if isinstance(value, dict):
+            # get node or create one
+            node = destination.setdefault(key, {})
+            merge(value, node)
+        else:
+            destination[key] = value
+
+    return destination        
+
+def compose(file_name, yaml_doc):
+    user='root'
+    
+    if not os.path.exists('default'):
+        os.makedirs('default')
+
+    if not os.path.exists('compose'):
+        os.makedirs('compose')
+
+    config = yaml_doc.pop("Configuration", {})
+    
+    if not os.path.exists('cron'):
+        os.makedirs('cron')
+    cron = file("cron/"+file_name.lower(), 'w')
+    cron.write('SHELL=/bin/sh\n')
+    cron.write('PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n')
+
+    for grouping, data in yaml_doc.iteritems(): # use safe_load instead load
+        defaults = copy.copy(global_defaults)
+        jobs = data.pop('Jobs')
+        defaults.update(data)
+
+        for job in jobs:
+            jobName, jobData = job.popitem()
+            dump = {'environment': {'job': jobName}}
+
+            merge(defaults, dump)
+            time = None
+            if isinstance(jobData, str):
+                time = jobData
+            else: 
+                merge(jobData, dump)
+                time = dump.pop('time', time)
+
+            for key, value in dump.iteritems():
+                dump[key] = substitute_all(dump['environment'], value)
+           
+
+            if time is None:
+                print("Time must be specfied for the job {0} in file {1}".format(jobName, file_name))
+                exit(1)
+            if os.path.exists('default/'+jobName):  
+                print('A job of this name already exists {0}'.format(jobName))
+                exit(1)
+
+
+            job_env = file('default/'+jobName, 'w')
+            for key, value in config.iteritems():
+                job_env.write('{0}="{1}"\n'.format(key,value))
+            job_env.close
+
+
+            stream = file("compose/"+jobName+".yaml", 'w')
+            yaml.dump({jobName: dump}, stream, default_flow_style=False)    # Write a YAML representation of data to 'document.yaml'.
+            stream.close()
+
+            cron.write("{0} {1} /app/processor/runner {2} >> /var/log/cron.log 2>&1\n".format(time,user, jobName))
+    cron.write('#Cron needs a newline at the end')
+    cron.close()
+    if 'SCHEDULED' in config: #If the scheduled key exists skip the cron file
+        os.remove("cron/"+file_name.lower()) 
+
+
+
+global global_defaults
+global_defaults = {}
+        
+cmdargs = sys.argv[1]
+
+default_file="{0}/DEFAULTS.yaml".format(cmdargs)
+if isfile(default_file):
+    global_defaults = load(default_file)    
+
+for f in os.listdir(cmdargs):
+    path = join(cmdargs,f)
+    if isfile(path):
+        yaml_doc=load(path)
+        validate(yaml_doc)
+        filename, file_extension = splitext(f)
+        if filename != 'DEFAULTS':
+            compose(filename, yaml_doc)
+

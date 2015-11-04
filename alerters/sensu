@@ -1,0 +1,32 @@
+#!/bin/bash
+#JOB OUTPUT STATUS
+
+HOST=${SENSU_HOST:-'127.0.0.1'}
+PORT=${SENSU_PORT:-'3030'}
+KIBANA=${KIBANA_HOST}
+
+
+STATUS=$EXIT_CODE
+if [[ $EXIT_CODE -ne 0 ]]; then
+    STATUS=2
+fi
+
+if [ -n "$KIBANA" ]; then
+    URL="http://${KIBANA}/#/discover?"
+    URL=$URL"_g=(time:(from:'$START',mode:absolute,to:'$END'))"
+    URL=$URL"&_a=(columns:!(message),index:%5Blogging-%5DYYYY.MM.DD,interval:auto"
+    URL=$URL",query:(query_string:(analyze_wildcard:!t,query:'docker.hostname:$JOB'))"
+    URL=$URL",sort:!('@timestamp',asc)"
+    URL=$URL")&empty_value" #used to make sure the final part of the string is parsable as an entire string 
+fi
+
+#TODO only send data to SENSU that we have values for - SENSU_JIT, CHANNEL, URL
+
+#Lets stop sending output for now
+DATA=$(echo "{\"name\": \"$JOB\", \"source\": \"$SENSU_JIT\", \"output\": \"$OUTPUT\", \"status\": $STATUS, \"slack_channel\": \"$CHANNEL\",\"logs\": \"$URL\"}")
+RESULT=$(echo "$DATA" | nc $HOST $PORT)
+if [[ $RESULT == 'invalid' ]]; then
+    echo "invalid sensu data: $DATA"
+    echo "NC Result: $RESULT"
+    RESULT=$(echo "{\"name\": \"$JOB\", \"source\": \"$SENSU_JIT\", \"output\": \"Netcat failure of $RESULT\", \"status\": $STATUS, \"slack_channel\": \"$CHANNEL\"}" | nc $HOST $PORT)
+fi

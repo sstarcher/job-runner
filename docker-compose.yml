@@ -1,0 +1,6 @@
+jobs:
+  build: .
+  volumes:
+    - ./example-jobs:/opt/crons
+    - /var/run/docker.sock:/var/run/docker.sock/
+
