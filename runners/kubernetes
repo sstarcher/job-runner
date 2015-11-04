@@ -7,6 +7,8 @@ sed -e "0,/$JOB/{s/$JOB/$K8S_JOB_LOWER/}" /app/compose/$JOB.yaml > /app/compose/
 compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
 rm /app/compose/$JOB.lowercase.yaml
 
+kubectl patch pod $K8S_JOB_LOWER -p '{"metadata": { "labels": { "jobrunner":"jobrunner"}}}'
+
 if kubectl get pod $K8S_JOB_LOWER &> /dev/null ; then
   status=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}')
 
