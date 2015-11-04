@@ -99,7 +99,7 @@ Example:
         time: '* * * * *'
         command: echo $job 
 ```
-4. docker build -t jobs .
+4. docker build --pull -t jobs .
 5. docker run jobs
 
 
