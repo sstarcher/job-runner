@@ -1,3 +1,5 @@
+#!/bin/bash
+
 reap()
 {
   K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
@@ -12,19 +14,20 @@ reap()
 # If job set. Reap that job
 # Itereate over all finished jobs
 if [ -z "$JOB" ] ; then
-  all_jobs=$(kubectl get pods -l jobrunner --no-headers | cut -d ' ' -f1)
+  all_jobs=($(kubectl get pods -l jobrunner --no-headers 2> /dev/null | cut -d ' ' -f1))
 
   for pod in "${all_jobs[@]}"
   do
+    echo "Getting pod $pod"
     #Get the original job name
-    job=$(kubectl get pod $job -o template -t '{{index .metadata.labels "jobrunner"}}')
+    job=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
     export JOB=$job
 
     STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
     case $STATUS in
       Succeeded|Failed )
         OUTPUT=$STATUS
-        EXIT_CODE=$(kubectl get pod $pod --no-headers | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
+        EXIT_CODE=$(kubectl get pod $pod --no-headers 2> /dev/null | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
 
         if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
           OUTPUT="Invalid EXIT_CODE $EXIT_CODE"

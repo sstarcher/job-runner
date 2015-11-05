@@ -1,1 +1,3 @@
-*/5 * * * * root /app/reapers/$RUNNER >> /var/log/cron.log 2>&1
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/1 * * * * root /app/processor/reap >> /var/log/cron.log 2>&1
