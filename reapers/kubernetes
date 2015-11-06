@@ -1,10 +1,11 @@
 #!/bin/bash
+export KUBERNETES_MASTER
 
 reap()
 {
   source /etc/default/$JOB
   K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
-  echo "Reaping JOB $JOB"
+  echo "[reaper] Reaping JOB $JOB"
   kubectl delete pod $K8S_JOB_LOWER > /dev/null
 
   if [ $ALERTER ]; then
@@ -19,7 +20,6 @@ if [ -z "$JOB" ] ; then
 
   for pod in "${all_jobs[@]}"
   do
-    echo "Getting pod $pod"
     #Get the original job name
     job=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
     export JOB=$job
@@ -39,7 +39,6 @@ if [ -z "$JOB" ] ; then
           continue
         else
           reap
-          break
         fi
       ;;
       * )
