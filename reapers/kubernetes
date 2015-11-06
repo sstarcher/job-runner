@@ -2,6 +2,7 @@
 
 reap()
 {
+  source /etc/default/$JOB
   K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
   echo "Reaping JOB $JOB"
   kubectl delete pod $K8S_JOB_LOWER > /dev/null
@@ -25,6 +26,9 @@ if [ -z "$JOB" ] ; then
 
     STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
     case $STATUS in
+      Pending|Running )
+        continue
+      ;;
       Succeeded|Failed )
         OUTPUT=$STATUS
         EXIT_CODE=$(kubectl get pod $pod --no-headers 2> /dev/null | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
