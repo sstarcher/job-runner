@@ -5,7 +5,7 @@ RUNTIME_CRONS=/opt/crons
 if [ -d "$RUNTIME_CRONS" ]; then
     ./processor/python.py $RUNTIME_CRONS
     cp /app/cron/* /etc/cron.d/
-    cp /app/default/* /etc/default/  
+    cp /app/default/* /etc/default/
 fi
 
 env | grep -v 'affinity:container' > /etc/default/runner
@@ -17,6 +17,7 @@ else
     export ALERTER=''
     export LOCKER=''
     export FOLLOW=true
+    export REAP=true
     /app/processor/runner $1
     exit
 fi

@@ -27,6 +27,7 @@ RUN \
     rm -rf kubernetes
 
 ADD files/compose2kube /usr/local/bin/compose2kube
+ADD files/reaper_cron /etc/cron.d/
 
 WORKDIR /app
 ADD . /app
@@ -38,8 +39,9 @@ RUN curl -SL -o /app/lockers/cronsul -z /app/lockers/cronsul https://raw.githubu
     chmod +x /app/lockers/cronsul
 RUN mkdir /app/compose
 
+
 ONBUILD ADD jobs jobs
-ONBUILD RUN ./processor/python.py jobs &&\
+ONBUILD RUN ./processor/python.py /app/jobs &&\
     cp /app/cron/* /etc/cron.d/ &&\
     cp /app/default/* /etc/default/
 

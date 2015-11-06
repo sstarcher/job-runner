@@ -1,0 +1,50 @@
+#!/bin/bash
+
+reap()
+{
+  K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
+  echo "Reaping JOB $JOB"
+  kubectl delete pod $K8S_JOB_LOWER > /dev/null
+
+  if [ $ALERTER ]; then
+      . /app/alerters/$ALERTER
+  fi
+}
+
+# If job set. Reap that job
+# Itereate over all finished jobs
+if [ -z "$JOB" ] ; then
+  all_jobs=($(kubectl get pods -l jobrunner --no-headers 2> /dev/null | cut -d ' ' -f1))
+
+  for pod in "${all_jobs[@]}"
+  do
+    echo "Getting pod $pod"
+    #Get the original job name
+    job=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
+    export JOB=$job
+
+    STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
+    case $STATUS in
+      Succeeded|Failed )
+        OUTPUT=$STATUS
+        EXIT_CODE=$(kubectl get pod $pod --no-headers 2> /dev/null | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
+
+        if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
+          OUTPUT="Invalid EXIT_CODE $EXIT_CODE"
+          echo $OUTPUT
+          continue
+        else
+          reap
+          break
+        fi
+      ;;
+      * )
+        OUTPUT="Unknown Status for Job [$STATUS]"
+        EXIT_CODE=404
+        reap
+      ;;
+    esac
+  done
+else
+  reap
+fi

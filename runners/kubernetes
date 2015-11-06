@@ -8,7 +8,7 @@ compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod 
 rm /app/compose/$JOB.lowercase.yaml
 
 if kubectl get pod $K8S_JOB_LOWER &> /dev/null ; then
-  status=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}')
+  status=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}' 2> /dev/null)
 
   if [ "$status" == 'Pending' ] || [ "$status" == 'Running' ]; then
     EXIT_CODE=200
@@ -35,50 +35,43 @@ do
   sleep 0.1
 done
 
+#Label the pod
+kubectl label pods $K8S_JOB_LOWER jobrunner=$JOB &> /dev/null
 
-DEATH_COUNTER=0
-while :
-do
-  STATUS=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}' 2> /dev/null)
-  case $STATUS in
-    Pending )
-      sleep 0.1
-    ;;
-    Running )
-      if [ "$FOLLOW" = true ] ; then
-        kubectl logs -f $K8S_JOB_LOWER &
-        FOLLOW=false
-      fi
-      sleep 0.1
-    ;;
-    Succeeded|Failed )
-      OUTPUT=$STATUS
-      EXIT_CODE=$(kubectl get pod $K8S_JOB_LOWER --no-headers | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
 
-      if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
-        OUTPUT="Invalid EXIT_CODE $EXIT_CODE"
-        echo $OUTPUT
-        continue
-      else
+if [ "$FOLLOW" != true ] ; then
+  OUTPUT="Running"
+  EXIT_CODE=0
+else
+  DEATH_COUNTER=0
+  while :
+  do
+    STATUS=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}' 2> /dev/null)
+    case $STATUS in
+      Pending )
+        sleep 0.1
+      ;;
+      Running )
+          kubectl logs -f $K8S_JOB_LOWER &
+      ;;
+      Succeeded|Failed )
+        OUTPUT=$STATUS
+        EXIT_CODE=$(kubectl get pod $K8S_JOB_LOWER --no-headers | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
+
+        if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
+          OUTPUT="Invalid EXIT_CODE $EXIT_CODE"
+          echo $OUTPUT
+          continue
+        else
+          break
+        fi
+       ;;
+      * )
+        OUTPUT="Unknown Status for Job [$STATUS]"
+        EXIT_CODE=404
         break
-      fi
-    ;;
-    "" )
-      DEATH_COUNTER=$((DEATH_COUNTER + 1))
-      if [ $DEATH_COUNTER -lt 5 ]; then
-        sleep 5
-        continue
-      fi
-      OUTPUT="Pod killed by outside source"
-      EXIT_CODE=66
-      break
-     ;;
-    * )
-      OUTPUT="Unknown Status for Job [$STATUS]"
-      EXIT_CODE=404
-      break
-    ;;
-  esac
-done
+      ;;
+    esac
+  done
 
-kubectl delete pod $K8S_JOB_LOWER > /dev/null
+fi
