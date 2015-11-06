@@ -22,11 +22,11 @@ Docker image: [https://registry.hub.docker.com/u/sstarcher/job-runner/]
   * If ran with no command argument it will start in cron mode and run on the cron schedule.  
   * Cron functionality can be disabled for an entire jobs yaml file by adding `SCHEDULED` under the configuration for a job yaml
 * Single Job
-  * If a job name is specified it will run the job, tail the logs, and exit when the job is finished. 
+  * If a job name is specified it will run the job, tail the logs, and exit when the job is finished.
   * Lockers and Alerters are disabled in this mode
 
 ### Deployment Methods
-* Docker 
+* Docker
   * docker run sstarcher/job-runner:latest
 
 * Kubernetes
@@ -76,6 +76,10 @@ spec:
   * SENSU_PORT to the port Sensu is listening on for the client - default `3030`
   * KIBANA_HOST optional URL.  If set a Kibana link will be sent to the sensu data
 
+### Reapers
+* Kubernetes
+  * Will delete any pods containing a "jobrunner" label
+  * Processes any alerting logic needed 
 
 ### Configuration
 * Alerters, Lockers are disabled by default
@@ -98,15 +102,7 @@ Example:
   Jobs:
     - Test:
         time: '* * * * *'
-        command: echo $job 
+        command: echo $job
 ```
 4. docker build --pull -t jobs .
 5. docker run jobs
-
-
-
-
-
-
-
-
