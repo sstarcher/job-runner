@@ -5,7 +5,7 @@ reap()
 {
   source /etc/default/$JOB
   K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
-  echo "[reaper] Reaping JOB $JOB"
+  echo "[$JOB] Reaping @ $END"
   kubectl delete pod $K8S_JOB_LOWER > /dev/null
 
   if [ $ALERTER ]; then
