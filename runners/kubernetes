@@ -36,7 +36,10 @@ do
 done
 
 #Label the pod
-kubectl label pods $K8S_JOB_LOWER jobrunner=$JOB &> /dev/null
+until kubectl label pods $K8S_JOB_LOWER jobrunner=$JOB &> /dev/null
+do
+  sleep 0.1
+done
 
 
 if [ "$FOLLOW" != true ] ; then

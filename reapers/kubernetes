@@ -22,6 +22,7 @@ if [ -z "$JOB" ] ; then
   do
     #Get the original job name
     job=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
+    START=$(kubectl get pod $pod -o template -t '{{.metadata.creationTimestamp}}' 2> /dev/null)
     export JOB=$job
 
     STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
