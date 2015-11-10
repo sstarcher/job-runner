@@ -23,7 +23,7 @@ if [ $LOCKED -eq 0 ]; then
     . /app/runners/$RUNNER
 
     if [ "$FOLLOW" == true ] ; then
-      . /app/reap
+      . /app/processor/reap
     fi
 fi
 
