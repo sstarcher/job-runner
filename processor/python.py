@@ -6,6 +6,7 @@ from string import Template
 import os
 from os.path import isfile, join, splitext
 import copy
+import re
 
 def load(yaml_file):
     f = open(yaml_file)
@@ -20,6 +21,15 @@ def validate(yaml_doc):
     #TODO validate cron time format
     #TODO validate job name works for K8S aka no _
     #sys.exit(1)
+
+def convert_memlimit(value):
+    if not isinstance(value, str):
+        return value
+    match = re.match(r"(\d+)[Mm][Bb]",value)
+    if match:
+        return int(match.group(1)) * pow(10,6)
+
+    return value
 
 def substitute_all(values, string):
     if isinstance(string, str):
@@ -40,11 +50,11 @@ def merge(source, destination):
         else:
             destination[key] = value
 
-    return destination        
+    return destination
 
 def compose(file_name, yaml_doc):
     user='root'
-    
+
     if not os.path.exists('default'):
         os.makedirs('default')
 
@@ -52,7 +62,7 @@ def compose(file_name, yaml_doc):
         os.makedirs('compose')
 
     config = yaml_doc.pop("Configuration", {})
-    
+
     if not os.path.exists('cron'):
         os.makedirs('cron')
     cron = file("cron/"+file_name.lower(), 'w')
@@ -72,18 +82,21 @@ def compose(file_name, yaml_doc):
             time = None
             if isinstance(jobData, str):
                 time = jobData
-            else: 
+            else:
                 merge(jobData, dump)
                 time = dump.pop('time', time)
 
             for key, value in dump.iteritems():
                 dump[key] = substitute_all(dump['environment'], value)
-           
+
+            if "mem_limit" in dump:
+                dump["mem_limit"] = convert_memlimit(dump["mem_limit"])
+                dump['environment']['mem_limit'] = dump['mem_limit']
 
             if time is None:
                 print("Time must be specfied for the job {0} in file {1}".format(jobName, file_name))
                 exit(1)
-            if os.path.exists('default/'+jobName):  
+            if os.path.exists('default/'+jobName):
                 print('A job of this name already exists {0}'.format(jobName))
                 exit(1)
 
@@ -102,18 +115,18 @@ def compose(file_name, yaml_doc):
     cron.write('#Cron needs a newline at the end')
     cron.close()
     if 'SCHEDULED' in config: #If the scheduled key exists skip the cron file
-        os.remove("cron/"+file_name.lower()) 
+        os.remove("cron/"+file_name.lower())
 
 
 
 global global_defaults
 global_defaults = {}
-        
+
 cmdargs = sys.argv[1]
 
 default_file="{0}/DEFAULTS.yaml".format(cmdargs)
 if isfile(default_file):
-    global_defaults = load(default_file)    
+    global_defaults = load(default_file)
 
 for f in os.listdir(cmdargs):
     path = join(cmdargs,f)
@@ -123,4 +136,3 @@ for f in os.listdir(cmdargs):
         filename, file_extension = splitext(f)
         if filename != 'DEFAULTS':
             compose(filename, yaml_doc)
-

@@ -4,16 +4,18 @@ Configuration: #This block is used to set environment variables that are used by
   #SCHEDULE: nil #The SCHEDULED key will disable cron based job scheduling for everything in this job
 
 # Top level keys are used for groupings
-# All 
+# All
 CronExamples: #Every value directly under this level are inherited by the jobs
   image: debian:jessie #This value is overriding what is set in the DEFAULTS.yaml
+  mem_limit: 2000
   #The $job key is a unique value that gets injected in based off of the unique key of the job
-  command: echo $job 
+  command: echo $job
   Jobs: #The actual jobs are always specified under a key named Jobs
     - EveryMinute:
+        mem_limit: 2000MB
         time: '* * * * *'
     - SingleLine: '* * * * *' # If the job does not define a hash we assume this is the cron expression
-    - MultipleValues: 
+    - MultipleValues:
         time: '* * * * *'
         command: echo $job $job #This value overrides what is set above in the root CronExamples
 
