@@ -17,7 +17,6 @@ else
     export ALERTER=''
     export LOCKER=''
     export FOLLOW=true
-    export REAP=true
     /app/processor/runner $1
     exit
 fi
