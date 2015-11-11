@@ -15,7 +15,7 @@ if [ -n "$KIBANA" ]; then
     URL="http://${KIBANA}/#/discover?"
     URL=$URL"_g=(time:(from:'$START',mode:absolute,to:'$END'))"
     URL=$URL"&_a=(columns:!(message),index:%5Blogging-%5DYYYY.MM.DD,interval:auto"
-    URL=$URL",query:(query_string:(analyze_wildcard:!t,query:'docker.hostname:$JOB'))"
+    URL=$URL",query:(query_string:(analyze_wildcard:!t,query:'host:$JOB'))"
     URL=$URL",sort:!('@timestamp',asc)"
     URL=$URL")&empty_value" #used to make sure the final part of the string is parsable as an entire string 
 fi
