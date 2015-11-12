@@ -2,8 +2,6 @@
 # Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
 export KUBERNETES_MASTER
 
-echo "RUNNING $JOB"
-
 . /app/processor/reap && unset EXIT_CODE
 
 
