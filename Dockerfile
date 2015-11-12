@@ -4,7 +4,9 @@ MAINTAINER shanestarcher@gmail.com
 RUN \
     apt-get update && \
     apt-get install -y curl cron python python-pip netcat && \
-    pip install PyYAML
+    pip install PyYAML && \
+    pip install chkcrontab
+
 
 RUN \
     mkdir -p /usr/local/bin/ &&\

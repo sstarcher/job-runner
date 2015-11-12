@@ -7,12 +7,19 @@ import os
 from os.path import isfile, join, splitext
 import copy
 import re
+import chkcrontab_lib as check
 
 def load(yaml_file):
     f = open(yaml_file)
     data = yaml.safe_load(f)
     f.close()
     return data
+
+def validate_cron(file_path):
+    whitelisted_users = None
+    log = check.LogCounter()
+    return check.check_crontab(file_path, log, whitelisted_users)
+
 
 def validate(yaml_doc):
     return
@@ -65,7 +72,8 @@ def compose(file_name, yaml_doc):
 
     if not os.path.exists('cron'):
         os.makedirs('cron')
-    cron = file("cron/"+file_name.lower(), 'w')
+    cron_file = "cron/"+file_name.lower()
+    cron = file(cron_file, 'w')
     cron.write('SHELL=/bin/sh\n')
     cron.write('PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n')
 
@@ -98,7 +106,7 @@ def compose(file_name, yaml_doc):
                 exit(1)
             if os.path.exists('default/'+jobName):
                 print('A job of this name already exists {0}'.format(jobName))
-                exit(1)
+                exit(2)
 
 
             job_env = file('default/'+jobName, 'w')
@@ -114,6 +122,12 @@ def compose(file_name, yaml_doc):
             cron.write("{0} {1} /app/processor/runner {2} >> /var/log/cron.log 2>&1\n".format(time,user, jobName))
     cron.write('#Cron needs a newline at the end')
     cron.close()
+
+    validation_log = validate_cron(cron_file)
+    if validation_log:
+        print(validation_log)
+        exit(9)
+
     if 'SCHEDULED' in config: #If the scheduled key exists skip the cron file
         os.remove("cron/"+file_name.lower())
 
