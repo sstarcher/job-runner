@@ -1,25 +1,17 @@
 #!/bin/bash
 # Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
 export KUBERNETES_MASTER
+
+echo "RUNNING $JOB"
+
+. /app/processor/reap && unset EXIT_CODE
+
+
 K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
 
 sed -e "0,/$JOB/{s/$JOB/$K8S_JOB_LOWER/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
 compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
 rm /app/compose/$JOB.lowercase.yaml
-
-if kubectl get pod $K8S_JOB_LOWER &> /dev/null ; then
-  status=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}' 2> /dev/null)
-
-  if [ "$status" == 'Pending' ] || [ "$status" == 'Running' ]; then
-    EXIT_CODE=200
-    OUTPUT="Previous job still running"
-    return
-  fi
-
-  echo "Pod was not properly cleaned up deleting $K8S_JOB_LOWER"
-  kubectl delete pod $K8S_JOB_LOWER &> /dev/null
-fi
-
 
 if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
   rm k8s_pod/${JOB,,}-pod.yaml
@@ -42,39 +34,21 @@ do
 done
 
 
+
 if [ "$FOLLOW" != true ] ; then
   OUTPUT="Running"
   EXIT_CODE=0
 else
-  DEATH_COUNTER=0
-  while :
+  while [ "$STATUS" != "Running" ]
   do
-    STATUS=$(kubectl get pod $K8S_JOB_LOWER -o template -t '{{.status.phase}}' 2> /dev/null)
-    case $STATUS in
-      Pending )
-        sleep 0.1
-      ;;
-      Running )
-          kubectl logs -f $K8S_JOB_LOWER &
-      ;;
-      Succeeded|Failed )
-        OUTPUT=$STATUS
-        EXIT_CODE=$(kubectl get pod $K8S_JOB_LOWER --no-headers | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
-
-        if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
-          OUTPUT="Invalid EXIT_CODE $EXIT_CODE"
-          echo $OUTPUT
-          continue
-        else
-          break
-        fi
-       ;;
-      * )
-        OUTPUT="Unknown Status for Job [$STATUS]"
-        EXIT_CODE=404
-        break
-      ;;
-    esac
+    . /app/processor/reap
   done
 
+  kubectl logs -f $K8S_JOB_LOWER &
+
+  while [ -z $EXIT_CODE ]
+  do
+    . /app/processor/reap
+  done
 fi
+

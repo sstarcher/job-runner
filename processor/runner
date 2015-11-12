@@ -22,8 +22,8 @@ if [ $LOCKED -eq 0 ]; then
     echo "[$JOB] Running @ $START"
     . /app/runners/$RUNNER
 
-    if [ "$FOLLOW" == true ] ; then
-      . /app/processor/reap
+    if [ $EXIT_CODE != 0 ] && [ $ALERTER ] ; then
+      . /app/alerters/$ALERTER
     fi
 fi
 

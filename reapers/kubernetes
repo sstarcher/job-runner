@@ -1,12 +1,13 @@
 #!/bin/bash
 export KUBERNETES_MASTER
+ORIGINAL_JOB=$JOB
 
 reap()
 {
   source /etc/default/$JOB
-  K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
+  START=$(kubectl get pod $pod -o template -t '{{.metadata.creationTimestamp}}' 2> /dev/null)
+  kubectl delete pod $pod > /dev/null
   echo "[$JOB] Reaping @ [$EXIT_CODE] @ $END"
-  kubectl delete pod $K8S_JOB_LOWER > /dev/null
 
   if [ $ALERTER ]; then
       . /app/alerters/$ALERTER
@@ -17,38 +18,35 @@ reap()
 # Itereate over all finished jobs
 if [ -z "$JOB" ] ; then
   all_jobs=($(kubectl get pods -l jobrunner --no-headers 2> /dev/null | cut -d ' ' -f1))
+else
+  all_jobs=($(echo $JOB | tr '[:upper:]' '[:lower:]'))
+fi
 
-  for pod in "${all_jobs[@]}"
-  do
-    #Get the original job name
-    JOB=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
-    START=$(kubectl get pod $pod -o template -t '{{.metadata.creationTimestamp}}' 2> /dev/null)
-
+for pod in "${all_jobs[@]}"
+do
+  #Get the original job name
+  JOB=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
+  if [ -f "/etc/default/$JOB" ] ; then
     STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
     case $STATUS in
       Pending|Running )
-        continue
       ;;
       Succeeded|Failed )
         OUTPUT=$STATUS
         EXIT_CODE=$(kubectl get pod $pod --no-headers 2> /dev/null | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
-        echo "EXIT: $EXIT_CODE"
         if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
-          OUTPUT="Invalid EXIT_CODE $EXIT_CODE"
-          echo $OUTPUT
-          continue
-        else
-          reap
+          OUTPUT="Invalid EXIT_CODE [$EXIT_CODE]"
+          EXIT_CODE=99
         fi
+        reap
       ;;
       * )
         OUTPUT="Unknown Status for Job [$STATUS]"
         EXIT_CODE=404
-        reap
+        #reap
       ;;
     esac
-  done
-else
-  echo 'inline reaping'
-  reap
-fi
+  fi
+done
+
+JOB=$ORIGINAL_JOB
