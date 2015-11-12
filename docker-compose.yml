@@ -3,13 +3,4 @@ jobs:
   volumes:
     - ./example-jobs:/opt/crons
     - /var/run/docker.sock:/var/run/docker.sock/
-  environment:
-    RUNNER: kubernetes
-    ALERTER: 'sensu'
-    LOCKER: 'consul'
-    SENSU_JIT: Jobs
-    KUBERNETES_MASTER: http://kubemaster.service.consul:8080
-    CONSUL_HOST: consul.service.consul
-    SENSU_HOST: sensu.service.consul
-    KIBANA_HOST: kibana.cluster.private
 
