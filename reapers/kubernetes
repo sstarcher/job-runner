@@ -7,7 +7,7 @@ reap()
   source /etc/default/$JOB
   START=$(kubectl get pod $pod -o template -t '{{.metadata.creationTimestamp}}' 2> /dev/null)
   kubectl delete pod $pod > /dev/null
-  echo "[$JOB] Reaping @ [$EXIT_CODE] @ $END"
+  echo "[$JOB] Reaping @ [$EXIT_CODE-$OUTPUT] @ $END"
 
   if [ $ALERTER ]; then
       . /app/alerters/$ALERTER
