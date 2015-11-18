@@ -23,7 +23,7 @@ RUN \
     chmod +x /usr/local/bin/docker-compose
 
 RUN \
-    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v1.0.3/kubernetes.tar.gz \
+    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v1.1.1/kubernetes.tar.gz \
     | tar xz kubernetes/platforms/linux/amd64/kubectl &&\
     mv kubernetes/platforms/linux/amd64/kubectl /usr/local/bin &&\
     rm -rf kubernetes
