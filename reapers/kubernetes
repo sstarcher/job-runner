@@ -17,7 +17,7 @@ reap()
 # If job set. Reap that job
 # Itereate over all finished jobs
 if [ -z "$JOB" ] ; then
-  all_jobs=($(kubectl get pods -l jobrunner --no-headers 2> /dev/null | cut -d ' ' -f1))
+  all_jobs=($(kubectl get pods -a -l jobrunner --no-headers 2> /dev/null | cut -d ' ' -f1))
 else
   all_jobs=($(echo $JOB | tr '[:upper:]' '[:lower:]'))
 fi
