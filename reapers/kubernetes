@@ -33,7 +33,7 @@ do
       ;;
       Succeeded|Failed )
         OUTPUT=$STATUS
-        EXIT_CODE=$(kubectl get pod $pod --no-headers 2> /dev/null | tr -s ' ' | cut -f3 -d ' ' | cut -f2 -d :)
+        EXIT_CODE=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.exitCode}}{{end}}')
         if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
           OUTPUT="Invalid EXIT_CODE [$EXIT_CODE]"
           EXIT_CODE=99
