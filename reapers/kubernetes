@@ -30,6 +30,7 @@ do
     STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
     case $STATUS in
       Pending|Running )
+        OUTPUT="$STATUS"
       ;;
       Succeeded|Failed )
         EXIT_CODE=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.exitCode}}{{end}}')
