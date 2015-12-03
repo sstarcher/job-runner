@@ -1,4 +1,5 @@
 #!/bin/bash
+set -a
 if [ -z $RUNNER ] ; then #Used to reap all jobs from the overarching reaper_cron
 	source /etc/default/runner
 fi
