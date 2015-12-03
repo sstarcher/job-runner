@@ -1,6 +1,10 @@
 FROM debian:jessie
 MAINTAINER shanestarcher@gmail.com
 
+ARG dockerize_version=0.0.4
+ARG kubernetes_version=1.1.1
+ARG compose_version=1.5.0
+
 RUN \
     apt-get update && \
     apt-get install -y curl cron python python-pip netcat && \
@@ -10,7 +14,7 @@ RUN \
 
 RUN \
     mkdir -p /usr/local/bin/ &&\
-    curl -SL https://github.com/jwilder/dockerize/releases/download/v0.0.3/dockerize-linux-amd64-v0.0.3.tar.gz \
+    curl -SL https://github.com/jwilder/dockerize/releases/download/v${dockerize_version}/dockerize-linux-amd64-v${dockerize_version}.tar.gz \
     | tar xzC /usr/local/bin
 
 RUN \
@@ -19,11 +23,11 @@ RUN \
     apt-get install -y docker.io
 
 RUN \
-    curl -L https://github.com/docker/compose/releases/download/1.5.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&\
+    curl -L https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&\
     chmod +x /usr/local/bin/docker-compose
 
 RUN \
-    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v1.1.1/kubernetes.tar.gz \
+    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v${kubernetes_version}/kubernetes.tar.gz \
     | tar xz kubernetes/platforms/linux/amd64/kubectl &&\
     mv kubernetes/platforms/linux/amd64/kubectl /usr/local/bin &&\
     rm -rf kubernetes
