@@ -1,4 +1,5 @@
 #!/bin/bash
+set -a
 JOB=$1
 env | grep -v 'affinity:container' > /tmp/derp
 source /etc/default/runner
