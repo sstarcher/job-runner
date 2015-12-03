@@ -7,7 +7,7 @@ reap()
   source /etc/default/$JOB
   START=$(kubectl get pod $pod -o template -t '{{.metadata.creationTimestamp}}' 2> /dev/null)
   kubectl delete pod $pod > /dev/null
-  echo "[$JOB] Reaping @ [$EXIT_CODE-$OUTPUT] @ $END"
+  echo "[$JOB] Reaping @ [$OUTPUT] @ $END"
 
   if [ $ALERTER ]; then
       . /app/alerters/$ALERTER
@@ -32,11 +32,12 @@ do
       Pending|Running )
       ;;
       Succeeded|Failed )
-        OUTPUT=$STATUS
         EXIT_CODE=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.exitCode}}{{end}}')
         if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
           OUTPUT="Invalid EXIT_CODE [$EXIT_CODE]"
           EXIT_CODE=99
+        else
+          OUTPUT="$STATUS with exit code [$EXIT_CODE]"
         fi
         reap
       ;;

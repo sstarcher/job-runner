@@ -14,7 +14,7 @@ rm /app/compose/$JOB.lowercase.yaml
 if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
   rm k8s_pod/${JOB,,}-pod.yaml
 else
-  OUTPUT="Could not create pod. Exiting"
+  OUTPUT="Could not create pod. $OUTPUT"
   EXIT_CODE=100
   return
 fi
