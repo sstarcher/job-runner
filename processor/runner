@@ -1,10 +1,8 @@
 #!/bin/bash
 set -a
 JOB=$1
-env | grep -v 'affinity:container' > /tmp/derp
 source /etc/default/runner
 source /etc/default/$JOB
-source /tmp/derp
 
 #Ensure we have a lock to run
 case "$LOCKER" in
