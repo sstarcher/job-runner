@@ -39,13 +39,12 @@ do
           EXIT_CODE=99
         else
           OUTPUT="$STATUS with exit code [$EXIT_CODE]"
+          reap
         fi
-        reap
       ;;
       * )
         OUTPUT="Unknown Status for Job [$STATUS]"
         EXIT_CODE=404
-        #reap
       ;;
     esac
   fi
