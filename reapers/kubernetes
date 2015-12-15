@@ -25,9 +25,9 @@ fi
 for pod in "${all_jobs[@]}"
 do
   #Get the original job name
-  JOB=$(kubectl get pod $pod -o template -t '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
+  JOB=$(kubectl get pod $pod -o template --template '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
   if [ -f "/etc/default/$JOB" ] ; then
-    STATUS=$(kubectl get pod $pod -o template -t '{{.status.phase}}' 2> /dev/null)
+    STATUS=$(kubectl get pod $pod -o template --template '{{.status.phase}}' 2> /dev/null)
     case $STATUS in
       Pending|Running )
         OUTPUT="$STATUS"
@@ -38,7 +38,8 @@ do
           OUTPUT="Invalid EXIT_CODE [$EXIT_CODE]"
           EXIT_CODE=99
         else
-          OUTPUT="$STATUS with exit code [$EXIT_CODE]"
+          REASON=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.reason}}{{end}}')
+          OUTPUT="$STATUS with exit code [$EXIT_CODE] for [$REASON]"
           reap
         fi
       ;;
