@@ -8,6 +8,8 @@ if [ -d "$RUNTIME_CRONS" ]; then
     cp /app/default/* /etc/default/
 fi
 
+test "$RUNNER" == "kubernetes" && /app/files/verify_kubectl
+
 env | grep -v 'affinity:container' > /etc/default/runner
 if [ -z $1 ]; then
     echo 'Running cron jobs'

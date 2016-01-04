@@ -27,7 +27,7 @@ RUN \
     curl -L https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&\
     chmod +x /usr/local/bin/docker-compose
 
-ONBUILD RUN \
+RUN \
     curl -SL https://github.com/kubernetes/kubernetes/releases/download/v${kubernetes_version}/kubernetes.tar.gz \
     | tar xz kubernetes/platforms/linux/amd64/kubectl &&\
     mv kubernetes/platforms/linux/amd64/kubectl /usr/local/bin &&\
