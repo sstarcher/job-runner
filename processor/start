@@ -16,7 +16,6 @@ if [ -z $1 ]; then
     chmod 0644 /etc/cron.d/*
     dockerize -stdout /var/log/cron.log cron -f
 else
-    export ALERTER=''
     export LOCKER=''
     export FOLLOW=true
     /app/processor/runner $1
