@@ -63,6 +63,7 @@ spec:
 * Kubernetes
   * Set `KUBERNETES_MASTER` to your Kubernetes cluster url example `http://127.0.0.1:8080`
   * compose2kube binary has been built from - https://github.com/sstarcher/compose2kube
+  * IGNORE_OVERRUN - if this variable is false if a job is running and a new job is launched of the same name this will alert to the  alerter
 
 ### Lockers
 * Consul

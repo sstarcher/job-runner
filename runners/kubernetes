@@ -15,7 +15,11 @@ if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
   rm k8s_pod/${JOB,,}-pod.yaml
 else
   OUTPUT="Could not create pod. $OUTPUT"
-  EXIT_CODE=100
+  if [ "$IGNORE_OVERRUN" = true ] ; then
+    EXIT_CODE=0
+  else
+    EXIT_CODE=100
+  fi
   return
 fi
 

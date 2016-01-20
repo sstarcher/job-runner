@@ -52,6 +52,7 @@ ONBUILD RUN ./processor/python.py /app/jobs &&\
     cp /app/cron/* /etc/cron.d/ &&\
     cp /app/default/* /etc/default/
 
+ENV IGNORE_OVERRUN false
 ENV RUNNER docker
 ENV ALERTER ''
 ENV LOCKER ''
