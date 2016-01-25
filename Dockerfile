@@ -2,9 +2,9 @@ FROM debian:jessie
 MAINTAINER shanestarcher@gmail.com
 
 #Docker Hub does not support docker 1.9 yet change back to ARG https://github.com/docker/hub-feedback/issues/460
-ENV dockerize_version=0.0.4
-ENV kubernetes_version=1.1.1
-ENV compose_version=1.5.0
+ENV dockerize_version=0.2.0
+ENV kubernetes_version=1.1.3
+ENV compose_version=1.5.2
 
 RUN \
     apt-get update && \
