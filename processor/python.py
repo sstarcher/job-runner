@@ -68,7 +68,8 @@ def compose(file_name, yaml_doc):
     if not os.path.exists('compose'):
         os.makedirs('compose')
 
-    config = yaml_doc.pop("Configuration", {})
+    config = copy.copy(global_config)
+    merge(yaml_doc.pop("Configuration", {}), config)
 
     if not os.path.exists('cron'):
         os.makedirs('cron')
@@ -134,13 +135,18 @@ def compose(file_name, yaml_doc):
 
 
 global global_defaults
+global global_config
+
 global_defaults = {}
+global_config = {}
 
 cmdargs = sys.argv[1]
 
 default_file="{0}/DEFAULTS.yaml".format(cmdargs)
 if isfile(default_file):
-    global_defaults = load(default_file)
+    loaded_defaults = load(default_file)
+    global_config = loaded_defaults.pop("Configuration", {})
+    global_defaults = loaded_defaults
 
 for f in os.listdir(cmdargs):
     path = join(cmdargs,f)
