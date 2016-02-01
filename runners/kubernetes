@@ -1,6 +1,24 @@
 #!/bin/bash
 # Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
 export KUBERNETES_MASTER
+NODE_SELECTOR=${NODE_SELECTOR:=""}
+
+addNodeSelector() {
+  NODE_SELECTOR="tester=true"
+  IFS=',' read -a VALUES <<< $NODE_SELECTOR
+  NODE_SELECTOR="{"
+
+  for var in ${VALUES[@]}
+  do
+    KEY="\"${var%=*}\""
+    VALUE="\"${var#*=}\""
+    NODE_SELECTOR="$NODE_SELECTOR $KEY:$VALUE,"
+  done
+  NODE_SELECTOR="${NODE_SELECTOR%,*}"
+  NODE_SELECTOR="$NODE_SELECTOR }"
+  SELECTOR="/\"containers\": \[/i\"nodeSelector\": $NODE_SELECTOR,"
+  sed -i "$SELECTOR" k8s_pod/${JOB,,}-pod.yaml
+}
 
 . /app/processor/reap && unset EXIT_CODE
 
@@ -10,6 +28,8 @@ K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
 sed -e "0,/$JOB/{s/$JOB/$K8S_JOB_LOWER/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
 compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
 rm /app/compose/$JOB.lowercase.yaml
+
+addNodeSelector
 
 if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
   rm k8s_pod/${JOB,,}-pod.yaml
@@ -53,4 +73,3 @@ else
     . /app/processor/reap
   done
 fi
-
