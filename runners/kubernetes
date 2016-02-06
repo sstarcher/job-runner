@@ -4,7 +4,6 @@ export KUBERNETES_MASTER
 NODE_SELECTOR=${NODE_SELECTOR:=""}
 
 addNodeSelector() {
-  NODE_SELECTOR="tester=true"
   IFS=',' read -a VALUES <<< $NODE_SELECTOR
   NODE_SELECTOR="{"
 
