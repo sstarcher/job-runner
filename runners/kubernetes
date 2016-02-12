@@ -2,12 +2,10 @@
 # Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
 export KUBERNETES_MASTER
 NODE_SELECTOR=${NODE_SELECTOR:=""}
-PULL_POLICY=${PULL_POLICY:=""}
 
 addImagePullPolicy() {
   if [ -n "$PULL_POLICY" ]; then
       IMAGE_PULL_POLICY=""s/imagePullPolicy\":\ \"\"/imagePullPolicy\":\ \"${PULL_POLICY}\"/""
-      echo "imagepullpolicy is $IMAGE_PULL_POLICY"
       sed -i "$IMAGE_PULL_POLICY" k8s_pod/${JOB,,}-pod.yaml
   fi  
 }
