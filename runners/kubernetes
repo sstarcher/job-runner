@@ -3,6 +3,13 @@
 export KUBERNETES_MASTER
 NODE_SELECTOR=${NODE_SELECTOR:=""}
 
+addImagePullPolicy() {
+  if [ -n "$PULL_POLICY" ]; then
+      IMAGE_PULL_POLICY=""s/imagePullPolicy\":\ \"\"/imagePullPolicy\":\ \"${PULL_POLICY}\"/""
+      sed -i "$IMAGE_PULL_POLICY" k8s_pod/${JOB,,}-pod.yaml
+  fi  
+}
+
 addNodeSelector() {
   IFS=',' read -a VALUES <<< $NODE_SELECTOR
   NODE_SELECTOR="{"
@@ -33,6 +40,7 @@ sed -e "0,/$JOB/{s/$JOB/$K8S_JOB_LOWER/}" /app/compose/$JOB.yaml > /app/compose/
 compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
 rm /app/compose/$JOB.lowercase.yaml
 
+addImagePullPolicy
 addNodeSelector
 addLabel
 
