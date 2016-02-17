@@ -19,6 +19,11 @@ addNodeSelector() {
   sed -i "$SELECTOR" k8s_pod/${JOB,,}-pod.yaml
 }
 
+addLabel() {
+  SELECTOR="/\"labels\": {/,/}/c\\\"labels\": {\n\"jobrunner\":\"$JOB\"\n\}"
+  sed -i "$SELECTOR" k8s_pod/${JOB,,}-pod.yaml
+}
+
 . /app/processor/reap && unset EXIT_CODE
 
 
@@ -29,6 +34,7 @@ compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod 
 rm /app/compose/$JOB.lowercase.yaml
 
 addNodeSelector
+addLabel
 
 if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
   rm k8s_pod/${JOB,,}-pod.yaml
@@ -47,14 +53,6 @@ until kubectl get pod $K8S_JOB_LOWER &> /dev/null
 do
   sleep 0.1
 done
-
-#Label the pod
-until kubectl label pods $K8S_JOB_LOWER jobrunner=$JOB &> /dev/null
-do
-  sleep 0.1
-done
-
-
 
 if [ "$FOLLOW" != true ] ; then
   OUTPUT="Running"
