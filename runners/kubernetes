@@ -33,10 +33,7 @@ addLabel() {
 
 . /app/processor/reap && unset EXIT_CODE
 
-
-K8S_JOB_LOWER=$(echo $JOB | tr '[:upper:]' '[:lower:]')
-
-sed -e "0,/$JOB/{s/$JOB/$K8S_JOB_LOWER/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
+sed -e "0,/$JOB/{s/$JOB/$JOB_LOWERCASE/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
 compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
 rm /app/compose/$JOB.lowercase.yaml
 
@@ -57,7 +54,8 @@ else
 fi
 
 #Ensure the pod is actually registered. Avoids a possible race condition
-until kubectl get pod $K8S_JOB_LOWER &> /dev/null
+#Label the pod
+until kubectl label pods $JOB_LOWERCASE jobrunner=$JOB &> /dev/null
 do
   sleep 0.1
 done
@@ -71,7 +69,8 @@ else
     . /app/processor/reap
   done
 
-  kubectl logs -f $K8S_JOB_LOWER &
+  kubectl logs -f $JOB_LOWERCASE
+ &
 
   while [ -z $EXIT_CODE ]
   do
