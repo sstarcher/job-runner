@@ -54,8 +54,7 @@ else
 fi
 
 #Ensure the pod is actually registered. Avoids a possible race condition
-#Label the pod
-until kubectl label pods $JOB_LOWERCASE jobrunner=$JOB &> /dev/null
+until kubectl label pods $JOB_LOWERCASE &> /dev/null
 do
   sleep 0.1
 done
