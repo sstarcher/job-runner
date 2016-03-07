@@ -38,6 +38,9 @@ def convert_memlimit(value):
 
     return value
 
+def convert_cpushares(value):
+    return value
+
 def substitute_all(values, string):
     if isinstance(string, str):
         template = Template(string)
@@ -100,7 +103,11 @@ def compose(file_name, yaml_doc):
 
             if "mem_limit" in dump:
                 dump["mem_limit"] = convert_memlimit(dump["mem_limit"])
-                dump['environment']['mem_limit'] = dump['mem_limit']
+                dump['environment']['mem_limit'] = str(dump['mem_limit'])
+
+            if "cpu_shares" in dump:
+                dump["cpu_shares"] = convert_cpushares(dump["cpu_shares"])
+                dump['environment']['cpu_shares'] = str(dump['cpu_shares'])
 
             if time is None:
                 print("Time must be specfied for the job {0} in file {1}".format(jobName, file_name))
