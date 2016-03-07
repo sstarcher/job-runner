@@ -1,7 +1,6 @@
 #!/bin/bash
 set -a
 JOB=$1
-JOB_LOWERCASE=$(echo $JOB | tr '[:upper:]' '[:lower:]')
 source /etc/default/runner
 source /etc/default/$JOB
 

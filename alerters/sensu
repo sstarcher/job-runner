@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/bas
 #JOB OUTPUT STATUS
 
 HOST=${SENSU_HOST:-'127.0.0.1'}
 PORT=${SENSU_PORT:-'3030'}
 KIBANA=${KIBANA_HOST}
-
+JOB_LOWERCASE=$(echo $JOB | tr '[:upper:]' '[:lower:]')
 
 STATUS=$EXIT_CODE
 if [[ $EXIT_CODE -ne 0 ]]; then

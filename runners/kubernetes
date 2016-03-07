@@ -33,6 +33,7 @@ addLabel() {
 
 . /app/processor/reap && unset EXIT_CODE
 
+JOB_LOWERCASE=$(echo $JOB | tr '[:upper:]' '[:lower:]')
 sed -e "0,/$JOB/{s/$JOB/$JOB_LOWERCASE/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
 compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
 rm /app/compose/$JOB.lowercase.yaml
