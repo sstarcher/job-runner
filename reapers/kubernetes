@@ -1,5 +1,5 @@
 #!/bin/bash
-export KUBERNETES_MASTER
+set -a
 ORIGINAL_JOB=$JOB
 
 reap()
