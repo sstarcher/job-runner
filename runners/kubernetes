@@ -55,7 +55,7 @@ else
 fi
 
 #Ensure the pod is actually registered. Avoids a possible race condition
-until kubectl label pods $JOB_LOWERCASE &> /dev/null
+until kubectl get pods $JOB_LOWERCASE &> /dev/null
 do
   sleep 0.1
 done
@@ -69,8 +69,7 @@ else
     . /app/processor/reap
   done
 
-  kubectl logs -f $JOB_LOWERCASE
- &
+  kubectl logs -f $JOB_LOWERCASE &
 
   while [ -z $EXIT_CODE ]
   do
