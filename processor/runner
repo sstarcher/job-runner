@@ -24,6 +24,8 @@ if [ $LOCKED -eq 0 ]; then
     if [ "$EXIT_CODE" != 0 ] && [ $ALERTER ] ; then
       . /app/alerters/$ALERTER
     fi
+else
+    echo "Locked via ${LOCKER}"
 fi
 
 case "$LOCKER" in

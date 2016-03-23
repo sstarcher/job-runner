@@ -47,6 +47,7 @@ if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
 else
   OUTPUT="Could not create pod. $OUTPUT"
   if [ "$IGNORE_OVERRUN" = true ] ; then
+    echo "[${JOB}] - IGNORING OVERRUN - will not alert"
     EXIT_CODE=0
   else
     EXIT_CODE=100
@@ -60,18 +61,20 @@ do
   sleep 0.1
 done
 
+
 if [ "$FOLLOW" != true ] ; then
   OUTPUT="Running"
   EXIT_CODE=0
 else
-  while [ "$STATUS" != "Running" ]
+  STATUS='Pending'
+  while [ "$STATUS" == "Pending" ]
   do
     . /app/processor/reap
   done
 
   kubectl logs -f $JOB_LOWERCASE &
 
-  while [ -z $EXIT_CODE ]
+  while [ -z "$EXIT_CODE" ]
   do
     . /app/processor/reap
   done

@@ -30,7 +30,16 @@ do
     STATUS=$(kubectl get pod $pod -o template --template '{{.status.phase}}' 2> /dev/null)
     case $STATUS in
       Pending|Running )
-        OUTPUT="$STATUS"
+        
+        ERRORS=$(kubectl get pod invalidcommand -o template  --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.waiting}}{{end}}' 2> /dev/null); DERPY=$?
+        if [ $DERPY -eq 0 ]; then
+          OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
+          STATUS="Error in Pending"
+          EXIT_CODE=98
+        else
+          OUTPUT="$STATUS"
+        fi
+        
       ;;
       Succeeded|Failed )
         EXIT_CODE=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.exitCode}}{{end}}')
@@ -47,7 +56,8 @@ do
         fi
       ;;
       * )
-        OUTPUT="Unknown Status for Job [$STATUS]"
+        OUTPUT="Unknown Status for Job [$STATUS] - The pod has likely been deleted"
+        STATUS="Unknown"
         EXIT_CODE=404
       ;;
     esac

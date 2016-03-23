@@ -11,7 +11,7 @@ fi
 test "$RUNNER" == "kubernetes" && /app/files/verify_kubectl || true
 
 env | grep -v 'affinity:container' > /etc/default/runner
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
     echo 'Running cron jobs'
     chmod 0644 /etc/cron.d/*
     dockerize -stdout /var/log/cron.log -poll cron -f

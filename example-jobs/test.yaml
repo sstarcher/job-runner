@@ -26,4 +26,14 @@ CronExamples: #Every value directly under this level are inherited by the jobs
 # This job inherits and uses the defaults specified in DEFAULTS.yaml
 TestDefaults:
   Jobs:
-    - DefaultTest: '* * * * *'
+    - DefaultTest: 
+        time: '* * * * *'
+        command: sleep 10
+Failure:
+  Jobs:
+    - InvalidCommand:
+        time: '* * * * *'
+        command: |
+           \n abc der -f \n
+           abc
+           defaults
