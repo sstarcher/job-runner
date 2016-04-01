@@ -4,7 +4,7 @@ export KUBERNETES_MASTER
 set -e
 
 MASTER_VERSION=$(curl -s $KUBERNETES_MASTER/version |  grep -i gitVersion | grep -o v[0-9]*\\.[0-9]*.\\.[0-9]*)
-LOCAL_VERSION=$(kubectl version -c | grep -i gitVersion | grep -o v[0-9]*\\.[0-9]*.\\.[0-9]*)
+LOCAL_VERSION=$(kubectl version --client | grep -i gitVersion | grep -o v[0-9]*\\.[0-9]*.\\.[0-9]*)
 
 test "$MASTER_VERSION" == "$LOCAL_VERSION" || ( echo "Client/Server K8S mismatch. Downloading $MASTER_VERSION" &&
   curl -SL https://github.com/kubernetes/kubernetes/releases/download/$MASTER_VERSION/kubernetes.tar.gz \
