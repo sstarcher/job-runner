@@ -109,9 +109,6 @@ def compose(file_name, yaml_doc):
                 dump["cpu_shares"] = convert_cpushares(dump["cpu_shares"])
                 dump['environment']['cpu_shares'] = str(dump['cpu_shares'])
 
-            if time is None:
-                print("Time must be specfied for the job {0} in file {1}".format(jobName, file_name))
-                exit(1)
             if os.path.exists('default/'+jobName):
                 print('A job of this name already exists {0}'.format(jobName))
                 exit(2)
@@ -127,7 +124,8 @@ def compose(file_name, yaml_doc):
             yaml.dump({jobName: dump}, stream, default_flow_style=False)    # Write a YAML representation of data to 'document.yaml'.
             stream.close()
 
-            cron.write("{0} {1} /app/processor/runner {2} >> /var/log/cron.log 2>&1\n".format(time,user, jobName))
+            if time:
+                cron.write("{0} {1} /app/processor/runner {2} >> /var/log/cron.log 2>&1\n".format(time,user, jobName))
     cron.write('#Cron needs a newline at the end')
     cron.close()
 
