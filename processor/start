@@ -6,18 +6,46 @@ if [ -d "$RUNTIME_CRONS" ]; then
     ./processor/python.py $RUNTIME_CRONS
     cp /app/cron/* /etc/cron.d/
     cp /app/default/* /etc/default/
+    
 fi
 
 test "$RUNNER" == "kubernetes" && /app/files/verify_kubectl || true
 
 env | grep -v 'affinity:container' > /etc/default/runner
-if [ -z "$1" ]; then
-    echo 'Running cron jobs'
-    chmod 0644 /etc/cron.d/*
+
+chmod 0644 /etc/cron.d/*
+if [[ -z "$1" ]]; then
+    echo 'Running cron jobs and reaper'
     dockerize -stdout /var/log/cron.log -poll cron -f
-else
+elif [[ "$1" == "cron" ]]; then
+    echo 'Running cron jobs'
+    rm /etc/cron.d/reaper_cron #stops reaper
+    dockerize -stdout /var/log/cron.log -poll cron -f
+elif [[ "$1" == "reaper" ]]; then
+    echo 'Running reaper'
+    pushd /etc/cron.d/ > /dev/null
+    find . ! -name 'reaper_cron' -type f -exec rm -f {} +
+    popd > /dev/null
+elif [[ $# -eq 1 ]]; then
     export LOCKER=''
     export FOLLOW=true
     /app/processor/runner $1
     exit
+else
+    export LOCKER=''
+    export FOLLOW=false
+    for VAR in "$@"
+    do
+        echo "Starting $VAR"
+        /app/processor/runner $VAR &
+        echo "Started $VAR"
+    done
+
+    for job in `jobs -p`
+    do
+    echo $job
+        wait $job || let "FAIL+=1"
+    done
+
+    echo $FAIL
 fi

@@ -5,8 +5,9 @@ ORIGINAL_JOB=$JOB
 reap()
 {
   source /etc/default/$JOB
-  START=$(kubectl get pod $pod -o template -t '{{.metadata.creationTimestamp}}' 2> /dev/null)
-  kubectl delete pod $pod > /dev/null
+  START=$(kubectl get job $pod -o=jsonpath={.metadata.creationTimestamp} 2> /dev/null)
+  END=$(kubectl get job $pod -o=jsonpath={.metadata.completionTime} 2> /dev/null)
+  kubectl delete job $pod > /dev/null
   echo "[$JOB] Reaping @ [$OUTPUT] @ $END"
 
   if [ $ALERTER ]; then
@@ -17,50 +18,47 @@ reap()
 # If job set. Reap that job
 # Itereate over all finished jobs
 if [ -z "$JOB" ] ; then
-  all_jobs=($(kubectl get pods -a -l jobrunner --no-headers 2> /dev/null | cut -d ' ' -f1))
+  all_jobs=($(kubectl get jobs --no-headers -o=jsonpath='{.items[*].metadata.name}' 2> /dev/null))
 else
-  all_jobs=($(echo $JOB | tr '[:upper:]' '[:lower:]'))
+  all_jobs=($(kubectl get jobs --selector=service=${JOB} -o=jsonpath='{.items[*].metadata.name}' 2> /dev/null))
 fi
 
 for pod in "${all_jobs[@]}"
 do
   #Get the original job name
-  JOB=$(kubectl get pod $pod -o template --template '{{index .metadata.labels "jobrunner"}}' 2> /dev/null)
+  JOB=$(kubectl get jobs $pod -o template --template '{{index .metadata.labels "service"}}' 2> /dev/null)
   if [ -f "/etc/default/$JOB" ] ; then
     STATUS=$(kubectl get pod $pod -o template --template '{{.status.phase}}' 2> /dev/null)
-    case $STATUS in
-      Pending|Running )
-        
-        ERRORS=$(kubectl get pod invalidcommand -o template  --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.waiting}}{{end}}' 2> /dev/null); DERPY=$?
-        if [ $DERPY -eq 0 ]; then
-          OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
-          STATUS="Error in Pending"
-          EXIT_CODE=98
-        else
-          OUTPUT="$STATUS"
-        fi
-        
-      ;;
-      Succeeded|Failed )
-        EXIT_CODE=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.exitCode}}{{end}}')
-        if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
-          OUTPUT="Invalid EXIT_CODE [$EXIT_CODE]"
-          EXIT_CODE=99
-        else
-          REASON=$(kubectl get pod $pod -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.reason}}{{end}}')
-          if [[ "$REASON" == "OOMKilled" ]]; then
-            EXIT_CODE=137
-          fi
-          OUTPUT="$STATUS with exit code [$EXIT_CODE] for [$REASON]"
-          reap
-        fi
-      ;;
-      * )
+
+    SUCCEEDED=$(kubectl get job $pod -o=jsonpath={.status.succeeded})
+    ACTIVE=$(kubectl get job $pod -o=jsonpath={.status.active})
+    FAILED=$(kubectl get job $pod -o=jsonpath={.status.failed})
+
+    POD_NAME=$(kubectl get pods --selector=service=$JOB -o=jsonpath='{.items[*].metadata.name}')
+    if [[ $SUCCEEDED ]]; then
+      OUTPUT="Succeeded"
+      reap
+    elif [[ $ACTIVE ]]; then
+
+      ERRORS=$(kubectl get pod $POD_NAME \
+        -o=jsonpath='{.status.containerStatuses[0].state.waiting}' 2> /dev/null); COMMAND_ERR=$?
+      if [ $COMMAND_ERR -eq 0 ]; then
+        OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
+        STATUS="Error in Pending"
+        EXIT_CODE=98
+      else
+        OUTPUT="$STATUS"
+      fi
+    elif [[ $FAILED ]]; then
+      REASON=$(kubectl get pod $POD_NAME -o template --template '{{with $x:= index .status.containerStatuses 0}}{{$x.state.terminated.reason}}{{end}}')
+      if [[ "$REASON" == "OOMKilled" ]]; then
+        EXIT_CODE=137
+      fi
+    else
         OUTPUT="Unknown Status for Job [$STATUS] - The pod has likely been deleted"
         STATUS="Unknown"
         EXIT_CODE=404
-      ;;
-    esac
+    fi
   fi
 done
 
