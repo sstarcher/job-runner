@@ -2,9 +2,9 @@ FROM debian:jessie
 MAINTAINER shanestarcher@gmail.com
 
 #Docker Hub does not support docker 1.9 yet change back to ARG https://github.com/docker/hub-feedback/issues/460
-ENV dockerize_version=0.2.0
-ENV kubernetes_version=1.2.0
-ENV compose_version=1.6.2
+ENV DOCKERIZE_VERSION=0.2.0
+ENV KUBERNETES_VERSION=1.2.0
+ENV COMPOSE_VERSION=1.6.2
 
 RUN \
     apt-get update && \
@@ -15,7 +15,7 @@ RUN \
 
 RUN \
     mkdir -p /usr/local/bin/ &&\
-    curl -SL https://github.com/jwilder/dockerize/releases/download/v${dockerize_version}/dockerize-linux-amd64-v${dockerize_version}.tar.gz \
+    curl -SL https://github.com/jwilder/dockerize/releases/download/v${DOCKERIZE_VERSION}/dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz \
     | tar xzC /usr/local/bin
 
 RUN \
@@ -24,11 +24,11 @@ RUN \
     apt-get install -y docker.io
 
 RUN \
-    curl -L https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&\
+    curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&\
     chmod +x /usr/local/bin/docker-compose
 
 RUN \
-    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v${kubernetes_version}/kubernetes.tar.gz \
+    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v${KUBERNETES_VERSION}/kubernetes.tar.gz \
     | tar xz kubernetes/platforms/linux/amd64/kubectl &&\
     mv kubernetes/platforms/linux/amd64/kubectl /usr/local/bin &&\
     rm -rf kubernetes

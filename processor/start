@@ -29,6 +29,7 @@ elif [[ "$1" == "reaper" ]]; then
 elif [[ $# -eq 1 ]]; then
     export LOCKER=''
     export FOLLOW=true
+    echo 'orly'
     /app/processor/runner $1
     exit
 else
