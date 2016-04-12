@@ -49,14 +49,14 @@ do
     case $STATUS in
       Pending|Running )
         
-        ERRORS=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.waiting.message}' 2> /dev/null); ERROR_CMD=$?
-        if [ $ERROR_CMD -eq 0 ]; then
-          OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
-          STATUS="Error in Pending"
-          EXIT_CODE=98
-        else
-          OUTPUT="$STATUS"
-        fi
+        #ERRORS=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.waiting.message}' 2> /dev/null); ERROR_CMD=$?
+        #if [ $ERROR_CMD -eq 0 ]; then
+        #  OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
+        #  STATUS="Error in Pending"
+        #  EXIT_CODE=98
+        #else
+        OUTPUT="$STATUS"
+        #fi
         
       ;;
       Succeeded|Failed )
