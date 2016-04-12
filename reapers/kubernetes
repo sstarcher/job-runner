@@ -19,7 +19,7 @@ reap()
   START=$(kubectl get job $pod -o=jsonpath={.status.startTime} 2> /dev/null)
   END=$(kubectl get job $pod -o=jsonpath={.status.completionTime} 2> /dev/null)
   if [[ "$END" == "<nil>" ]]; then #Failure to launch results in nil completion
-    END=$(date +"%Y-%m-%d %H:%M:%S %z %Z")
+    END='' #allow alerter to set it to current time
   fi
 
   kubectl delete job $job_name > /dev/null
