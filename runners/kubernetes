@@ -2,50 +2,30 @@
 # Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
 export KUBERNETES_MASTER
 NODE_SELECTOR=${NODE_SELECTOR:=""}
+PULL_POLICY=${PULL_POLICY:=""}
 
-addImagePullPolicy() {
-  if [ -n "$PULL_POLICY" ]; then
-      IMAGE_PULL_POLICY=""s/imagePullPolicy\":\ \"\"/imagePullPolicy\":\ \"${PULL_POLICY}\"/""
-      sed -i "$IMAGE_PULL_POLICY" k8s_pod/${JOB,,}-pod.yaml
-  fi  
-}
-
-addNodeSelector() {
-  IFS=',' read -a VALUES <<< $NODE_SELECTOR
-  NODE_SELECTOR="{"
-
-  for var in ${VALUES[@]}
-  do
-    KEY="\"${var%=*}\""
-    VALUE="\"${var#*=}\""
-    NODE_SELECTOR="$NODE_SELECTOR $KEY:$VALUE,"
-  done
-  NODE_SELECTOR="${NODE_SELECTOR%,*}"
-  NODE_SELECTOR="$NODE_SELECTOR }"
-  SELECTOR="/\"containers\": \[/i\"nodeSelector\": $NODE_SELECTOR,"
-  sed -i "$SELECTOR" k8s_pod/${JOB,,}-pod.yaml
-}
-
-addLabel() {
-  SELECTOR="/\"labels\": {/,/}/c\\\"labels\": {\n\"jobrunner\":\"$JOB\"\n\}"
-  sed -i "$SELECTOR" k8s_pod/${JOB,,}-pod.yaml
-}
-
-. /app/processor/reap && unset EXIT_CODE
-
-JOB_LOWERCASE=$(echo $JOB | tr '[:upper:]' '[:lower:]')
-sed -e "0,/$JOB/{s/$JOB/$JOB_LOWERCASE/}" /app/compose/$JOB.yaml > /app/compose/$JOB.lowercase.yaml
-compose2kube -compose-file /app/compose/$JOB.lowercase.yaml -output-dir k8s_pod > /dev/null
-rm /app/compose/$JOB.lowercase.yaml
-
-addImagePullPolicy
-addNodeSelector
-addLabel
-
-if kubectl create -f k8s_pod/${JOB,,}-pod.yaml > /dev/null ; then
-  rm k8s_pod/${JOB,,}-pod.yaml
+. /app/processor/reap
+if [[ "$EXIT_CODE" -eq 98 ]]; then
+  echo 'Container creation error'
+  return
 else
-  OUTPUT="Could not create pod. $OUTPUT"
+  unset EXIT_CODE
+fi
+
+
+if [[ -z $(kubectl get pods --selector=service=${JOB} 2> /dev/null ) ]]; then
+  compose2kube \
+    -compose-file /app/compose/$JOB.yaml \
+    -pull-policy="${PULL_POLICY}" \
+    -node-selector="${NODE_SELECTOR}" \
+    -output-dir k8s_${JOB} > /dev/null
+  OUTPUT=$(kubectl create -f k8s_${JOB}); RESULT=$?
+  rm -rf k8s_${JOB}
+
+  if [ $RESULT -ne 0 ]; then
+    EXIT_CODE=101
+  fi
+else
   if [ "$IGNORE_OVERRUN" = true ] ; then
     echo "[${JOB}] - IGNORING OVERRUN - will not alert"
     EXIT_CODE=0
@@ -56,7 +36,7 @@ else
 fi
 
 #Ensure the pod is actually registered. Avoids a possible race condition
-until kubectl get pods $JOB_LOWERCASE &> /dev/null
+until kubectl get jobs --selector=service=${JOB} &> /dev/null
 do
   sleep 0.1
 done
@@ -72,7 +52,8 @@ else
     . /app/processor/reap
   done
 
-  kubectl logs -f $JOB_LOWERCASE &
+  POD_NAME=$(kubectl get pods --selector=service=$JOB -o=jsonpath='{.items[*].metadata.name}')
+  kubectl logs -f $POD_NAME &
 
   while [ -z "$EXIT_CODE" ]
   do
