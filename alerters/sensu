@@ -10,7 +10,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [ -z "$END" ]; then 
-    END=$(date +"%Y-%m-%d %H:%M:%S %z %Z")
+    END=$(date +"%Y-%m-%dT%H:%M:%SZ")
 fi
 
 DATA=$(dockerize -template /app/templates/sensu.tmpl)

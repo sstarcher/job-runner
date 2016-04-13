@@ -15,9 +15,10 @@ oldest_pod(){
 reap()
 {
   source /etc/default/$JOB
+
   # Might want to use .metadata.creationTimestamp
-  START=$(kubectl get job $pod -o=jsonpath={.status.startTime} 2> /dev/null)
-  END=$(kubectl get job $pod -o=jsonpath={.status.completionTime} 2> /dev/null)
+  export START=$(kubectl get job $pod -o=jsonpath={.status.startTime} 2> /dev/null)
+  export END=$(kubectl get job $pod -o=jsonpath={.status.completionTime} 2> /dev/null)
   if [[ "$END" == "<nil>" ]]; then #Failure to launch results in nil completion
     END='' #allow alerter to set it to current time
   fi
