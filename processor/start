@@ -27,8 +27,8 @@ elif [[ "$1" == "reaper" ]]; then
     find . ! -name 'reaper_cron' -type f -exec rm -f {} +
     popd > /dev/null
 elif [[ $# -eq 1 ]]; then
-    export LOCKER=''
-    export FOLLOW=true
+    echo 'LOCKER=""' >> /etc/default/runner
+    echo 'FOLLOW=true' >> /etc/default/runner
     /app/processor/runner $1
     exit
 else
