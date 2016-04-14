@@ -43,9 +43,8 @@ else
 
     for job in `jobs -p`
     do
-    echo $job
         wait $job || let "FAIL+=1"
     done
 
-    echo $FAIL
+    echo "Failures - $FAIL"
 fi
