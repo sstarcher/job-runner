@@ -78,10 +78,10 @@ do
         STATUS="Unknown"
         if [ $STATUS_CMD -ne 0 ]; then 
           OUTPUT="Failure to get phase"
-          SUCCEEDED=$(kubectl get jobs sleep2 -o=jsonpath={.status.succeeded})
+          SUCCEEDED=$(kubectl get jobs $job_name -o=jsonpath={.status.succeeded})
           if [ $SUCCEEDED -gt 0 ]; then
             OUTPUT="Pods missing, but job reports succeeded"
-            EXIT_CODE=401 
+            reap
           fi
         else
           OUTPUT="Unknown Status for Job [$STATUS] - The pod has likely been deleted"
