@@ -81,7 +81,7 @@ do
           SUCCEEDED=$(kubectl get jobs sleep2 -o=jsonpath={.status.succeeded})
           if [ $SUCCEEDED -gt 0 ]; then
             OUTPUT="Pods missing, but job reports succeeded"
-            reap
+            EXIT_CODE=401 
           fi
         else
           OUTPUT="Unknown Status for Job [$STATUS] - The pod has likely been deleted"
