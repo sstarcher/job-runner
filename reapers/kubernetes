@@ -15,15 +15,14 @@ oldest_pod(){
 reap()
 {
   source /etc/default/$JOB
-
-  # Might want to use .metadata.creationTimestamp
-  export START=$(kubectl get job $pod -o=jsonpath={.status.startTime} 2> /dev/null)
-  export END=$(kubectl get job $pod -o=jsonpath={.status.completionTime} 2> /dev/null)
-  if [[ "$END" == "<nil>" ]]; then #Failure to launch results in nil completion
+ 
+  export START=$(kubectl get job $job_name -o=template --template={{.status.startTime}} 2> /dev/null)
+  export END=$(kubectl get job $job_name -o=template --template={{.status.completionTime}} 2> /dev/null)
+  if [[ "$END" == "<no value>" ]]; then #Failure to launch results in nil completion
     END='' #allow alerter to set it to current time
   fi
 
-  kubectl delete job $job_name > /dev/null
+  kubectl delete job $job_name &> /dev/null
   echo "[$JOB] Reaping @ [$OUTPUT] @ $END"
 
   if [ $ALERTER ]; then
@@ -46,7 +45,8 @@ do
   JOB=$(kubectl get jobs $job_name -o=jsonpath={.metadata.labels.service} 2> /dev/null)
   if [ -f "/etc/default/$JOB" ] ; then
     pod=$(oldest_pod)
-    STATUS=$(kubectl get pod $pod -o=jsonpath={.status.phase} 2> /dev/null)
+    STATUS=$(kubectl get pod $pod -o=jsonpath={.status.phase} 2> /dev/null); STATUS_CMD=$?
+
     case $STATUS in
       Pending|Running )
         
@@ -75,9 +75,18 @@ do
         fi
       ;;
       * )
-        OUTPUT="Unknown Status for Job [$STATUS] - The pod has likely been deleted"
         STATUS="Unknown"
-        EXIT_CODE=404
+        if [ $STATUS_CMD -ne 0 ]; then 
+          OUTPUT="Failure to get phase"
+          SUCCEEDED=$(kubectl get jobs sleep2 -o=jsonpath={.status.succeeded})
+          if [ $SUCCEEDED -gt 0 ]; then
+            OUTPUT="Pods missing, but job reports succeeded"
+            reap
+          fi
+        else
+          OUTPUT="Unknown Status for Job [$STATUS] - The pod has likely been deleted"
+          EXIT_CODE=404
+        fi
       ;;
     esac
   fi
