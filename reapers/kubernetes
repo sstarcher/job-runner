@@ -51,7 +51,7 @@ do
       Pending|Running )
         
         #ERRORS=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.waiting.message}' 2> /dev/null); ERROR_CMD=$?
-        #if [ $ERROR_CMD -eq 0 ]; then
+        #if [[ $ERROR_CMD -eq 0 ]]; then
         #  OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
         #  STATUS="Error in Pending"
         #  EXIT_CODE=98
@@ -76,10 +76,10 @@ do
       ;;
       * )
         STATUS="Unknown"
-        if [ $STATUS_CMD -ne 0 ]; then 
+        if [[ $STATUS_CMD -ne 0 ]]; then 
           OUTPUT="Failure to get phase"
           SUCCEEDED=$(kubectl get jobs $job_name -o=jsonpath={.status.succeeded})
-          if [ $SUCCEEDED -gt 0 ]; then
+          if [[ $SUCCEEDED -gt 0 ]]; then
             OUTPUT="Pods missing, but job reports succeeded"
             reap
           fi
