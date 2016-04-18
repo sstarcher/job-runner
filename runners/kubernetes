@@ -13,7 +13,7 @@ else
 fi
 
 
-if [[ -z $(kubectl get pods --selector=service=${JOB} 2> /dev/null ) ]]; then
+if [[ -z $(kubectl get jobs --selector=service=${JOB} 2> /dev/null ) ]]; then
   compose2kube \
     -compose-file /app/compose/$JOB.yaml \
     -pull-policy="${PULL_POLICY}" \
