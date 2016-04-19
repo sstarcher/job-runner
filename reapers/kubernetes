@@ -42,7 +42,7 @@ fi
 for job_name in "${all_jobs[@]}"
 do
   #Get the original job name
-  JOB=$(kubectl get jobs $job_name -o=jsonpath={.metadata.labels.service} 2> /dev/null)
+  JOB=$(kubectl get jobs $job_name -o=jsonpath={.metadata.labels.job-name} 2> /dev/null)
   if [ -f "/etc/default/$JOB" ] ; then
     pod=$(oldest_pod)
     STATUS=$(kubectl get pod $pod -o=jsonpath={.status.phase} 2> /dev/null); STATUS_CMD=$?
