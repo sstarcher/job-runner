@@ -23,6 +23,8 @@ reap()
   fi
 
   kubectl delete job $job_name &> /dev/null
+  kubectl delete pod --selector=service=$JOB &> /dev/null #delete job sometimes fails to delete the pods
+
   echo "[$JOB] Reaping @ [$OUTPUT] @ $END"
 
   if [ $ALERTER ]; then
