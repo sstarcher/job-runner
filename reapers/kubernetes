@@ -60,7 +60,12 @@ do
         #else
         OUTPUT="$STATUS"
         #fi
-        
+        SUCCEEDED=$(kubectl get jobs $job_name -o=jsonpath={.status.succeeded})
+        if [[ $SUCCEEDED -gt 0 ]]; then
+            OUTPUT="First pod failed to launch, but a subsequent pod claims completion."
+            EXIT_CODE=98
+            reap
+        fi
       ;;
       Succeeded|Failed )
         EXIT_CODE=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}')
