@@ -7,15 +7,15 @@ query_pods()
   kubectl get pods -a --selector=service=$JOB "$@" 2> /dev/null
 }
 
-oldest_pod(){  
-  query_pods -o=custom-columns=STATUS:.status.startTime,NAME:.metadata.name \
-   | sort | head -n1 | awk '{ print $5 }'
+oldest_pod(){
+  query_pods -o=custom-columns=STATUS:.status.startTime,NAME:.metadata.name,CONTAINER_STATUS:.status.containerStatuses \
+   | grep -v '\[\]' | sort | head -n1 | awk '{ print $5 }'
 }
 
 reap()
 {
   source /etc/default/$JOB
- 
+
   export START=$(kubectl get job $job_name -o=template --template={{.status.startTime}} 2> /dev/null)
   export END=$(kubectl get job $job_name -o=template --template={{.status.completionTime}} 2> /dev/null)
   if [[ "$END" == "<no value>" ]]; then #Failure to launch results in nil completion
@@ -47,11 +47,17 @@ do
   JOB=$(kubectl get jobs $job_name -o=jsonpath={.metadata.labels.service} 2> /dev/null)
   if [ -f "/etc/default/$JOB" ] ; then
     pod=$(oldest_pod)
-    STATUS=$(kubectl get pod $pod -o=jsonpath={.status.phase} 2> /dev/null); STATUS_CMD=$?
+
+    if [ -z "$pod" ]
+    then
+      STATUS="Unknown"; STATUS_CMD=-1
+    else
+      STATUS=$(kubectl get pod $pod -o=jsonpath={.status.phase} 2> /dev/null); STATUS_CMD=$?
+    fi
 
     case $STATUS in
       Pending|Running )
-        
+
         #ERRORS=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.waiting.message}' 2> /dev/null); ERROR_CMD=$?
         #if [[ $ERROR_CMD -eq 0 ]]; then
         #  OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
@@ -83,7 +89,7 @@ do
       ;;
       * )
         STATUS="Unknown"
-        if [[ $STATUS_CMD -ne 0 ]]; then 
+        if [[ $STATUS_CMD -ne 0 ]]; then
           OUTPUT="Failure to get phase"
           SUCCEEDED=$(kubectl get jobs $job_name -o=jsonpath={.status.succeeded})
           if [[ $SUCCEEDED -gt 0 ]]; then
