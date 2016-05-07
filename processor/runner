@@ -2,7 +2,11 @@
 set -a
 JOB=$1
 source /etc/default/runner
-source /etc/default/$JOB
+source /etc/default/$JOB; JOB_EXISTS=$?
+if [ $JOB_EXISTS -ne 0 ]; then
+    echo "The specified job does not exist [${JOB}]"
+    exit 1
+fi
 
 #Ensure we have a lock to run
 case "$LOCKER" in
