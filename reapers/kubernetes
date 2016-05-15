@@ -2,8 +2,7 @@
 set -a
 ORIGINAL_JOB=$JOB
 
-query_pods()
-{
+query_pods(){
   kubectl get pods -a --selector=service=$JOB "$@" 2> /dev/null
 }
 
@@ -28,11 +27,10 @@ alert(){
   fi
 }
 
-reap()
-{
-  alert()
+reap(){
+  alert
   kubectl delete job $job_name &> /dev/null
-  kubectl delete pod --selector=service=$JOB &> /dev/null #delete job sometimes fails to delete the pods
+  kubectl delete pod --selector=service=$JOB &> /dev/null  #delete job sometimes fails to delete the pods
 }
 
 # If job set. Reap that job
@@ -80,9 +78,9 @@ do
           OUTPUT="$STATUS with exit code [$EXIT_CODE] for [$REASON]"
 
           if [ "$EXIT_CODE" -eq "-1" ]; then
-            alert()
+            alert
           else
-            reap()
+            reap
           fi
         fi
       ;;
