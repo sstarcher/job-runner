@@ -12,18 +12,13 @@ oldest_pod(){
    | grep -v '\[\]' | sort | head -n1 | awk '{ print $5 }'
 }
 
-reap()
-{
+alert(){
   source /etc/default/$JOB
-
   export START=$(kubectl get job $job_name -o=template --template={{.status.startTime}} 2> /dev/null)
   export END=$(kubectl get job $job_name -o=template --template={{.status.completionTime}} 2> /dev/null)
   if [[ "$END" == "<no value>" ]]; then #Failure to launch results in nil completion
     END='' #allow alerter to set it to current time
   fi
-
-  kubectl delete job $job_name &> /dev/null
-  kubectl delete pod --selector=service=$JOB &> /dev/null #delete job sometimes fails to delete the pods
 
   echo "[$JOB] Reaping @ [$OUTPUT] @ $END"
 
@@ -31,6 +26,13 @@ reap()
       export POD_NAME=$pod
       . /app/alerters/$ALERTER
   fi
+}
+
+reap()
+{
+  alert()
+  kubectl delete job $job_name &> /dev/null
+  kubectl delete pod --selector=service=$JOB &> /dev/null #delete job sometimes fails to delete the pods
 }
 
 # If job set. Reap that job
@@ -57,15 +59,7 @@ do
 
     case $STATUS in
       Pending|Running )
-
-        #ERRORS=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.waiting.message}' 2> /dev/null); ERROR_CMD=$?
-        #if [[ $ERROR_CMD -eq 0 ]]; then
-        #  OUTPUT="[${JOB}] - Unknown pending status - ${ERRORS}"
-        #  STATUS="Error in Pending"
-        #  EXIT_CODE=98
-        #else
         OUTPUT="$STATUS"
-        #fi
         SUCCEEDED=$(kubectl get jobs $job_name -o=jsonpath={.status.succeeded})
         if [[ $SUCCEEDED -gt 0 ]]; then
             OUTPUT="First pod failed to launch, but a subsequent pod claims completion."
@@ -75,7 +69,7 @@ do
       ;;
       Succeeded|Failed )
         EXIT_CODE=$(kubectl get pod $pod -o=jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}')
-        if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ] 2> /dev/null ; then
+        if ! [ "$EXIT_CODE" -eq "$EXIT_CODE" ]; then
           OUTPUT="Invalid EXIT_CODE [$EXIT_CODE]"
           EXIT_CODE=99
         else
@@ -84,7 +78,12 @@ do
             EXIT_CODE=137
           fi
           OUTPUT="$STATUS with exit code [$EXIT_CODE] for [$REASON]"
-          reap
+
+          if [ "$EXIT_CODE" -eq "-1" ]; then
+            alert()
+          else
+            reap()
+          fi
         fi
       ;;
       * )
