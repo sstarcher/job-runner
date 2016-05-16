@@ -55,7 +55,7 @@ do
   #Get the original job name
   JOB=$(kubectl get jobs $job_name -o=jsonpath={.metadata.labels.service} 2> /dev/null)
   if [ -f "/etc/default/$JOB" ] ; then
-    pod=$(oldest_pod)
+    pod=$(get_pod)
 
     if [ -z "$pod" ]
     then
