@@ -31,7 +31,7 @@ else
     EXIT_CODE=0
     if [[ "$FOLLOW" == *"true"* ]] ; then
       POD_NAME=$(kubectl get pods --selector=service=$JOB -o=jsonpath='{.items[*].metadata.name}')
-      kubectl logs -f $POD_NAME
+      echo "kubectl logs -f $POD_NAME"
     fi
   else
     EXIT_CODE=100
