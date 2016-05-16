@@ -3,12 +3,21 @@ set -a
 ORIGINAL_JOB=$JOB
 
 query_pods(){
-  kubectl get pods -a --selector=service=$JOB "$@" 2> /dev/null
+  kubectl get pods --no-headers -a --selector=service=$JOB "$@" 2> /dev/null
 }
 
 oldest_pod(){
   query_pods -o=custom-columns=STATUS:.status.startTime,NAME:.metadata.name,CONTAINER_STATUS:.status.containerStatuses \
    | grep -v '\[\]' | sort | head -n1 | awk '{ print $5 }'
+}
+
+get_pod(){
+  COMPLETED_PODS=$(query_pods | grep Completed)
+  if [ -n "$COMPLETED_PODS" ]; then
+    echo $COMPLETED_PODS | sort | head -n1 | awk '{ print $1 }'
+  else
+    oldest_pod
+  fi
 }
 
 alert(){
@@ -79,8 +88,6 @@ do
 
           if [ "$EXIT_CODE" -gt "-1" ]; then
             reap
-          else
-            alert
           fi
         fi
       ;;
