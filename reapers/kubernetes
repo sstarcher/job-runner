@@ -77,10 +77,10 @@ do
           fi
           OUTPUT="$STATUS with exit code [$EXIT_CODE] for [$REASON]"
 
-          if [ "$EXIT_CODE" -eq "-1" ]; then
-            alert
-          else
+          if [ "$EXIT_CODE" -gt "-1" ]; then
             reap
+          else
+            alert
           fi
         fi
       ;;
