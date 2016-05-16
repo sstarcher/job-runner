@@ -29,6 +29,7 @@ elif [[ "$1" == "reaper" ]]; then
 elif [[ $# -eq 1 ]]; then
     echo 'LOCKER=""' >> /etc/default/runner
     echo 'FOLLOW=true' >> /etc/default/runner
+    echo 'ALERTER=stdout' >> /etc/default/runner
     /app/processor/runner $1
     exit
 else
