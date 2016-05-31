@@ -26,6 +26,7 @@ elif [[ "$1" == "reaper" ]]; then
     pushd /etc/cron.d/ > /dev/null
     find . ! -name 'reaper_cron' -type f -exec rm -f {} +
     popd > /dev/null
+    dockerize -stdout /var/log/cron.log -poll cron -f
 elif [[ $# -eq 1 ]]; then
     echo 'LOCKER=""' >> /etc/default/runner
     echo 'FOLLOW=true' >> /etc/default/runner
