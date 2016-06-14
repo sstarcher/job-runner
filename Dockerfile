@@ -40,9 +40,9 @@ WORKDIR /app
 ADD . /app
 
 RUN mkdir -p /app/lockers
-RUN curl -SL -o /app/lockers/cronsul-cleanup -z /app/lockers/cronsul-cleanup https://raw.githubusercontent.com/EvanKrall/cronsul/master/cronsul-cleanup &&\
+RUN curl -SL -o /app/lockers/cronsul-cleanup https://raw.githubusercontent.com/EvanKrall/cronsul/master/cronsul-cleanup &&\
     chmod +x /app/lockers/cronsul-cleanup
-RUN curl -SL -o /app/lockers/cronsul -z /app/lockers/cronsul https://raw.githubusercontent.com/EvanKrall/cronsul/master/cronsul &&\
+RUN curl -SL -o /app/lockers/cronsul https://raw.githubusercontent.com/EvanKrall/cronsul/master/cronsul &&\
     chmod +x /app/lockers/cronsul
 RUN mkdir /app/compose
 
