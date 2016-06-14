@@ -155,7 +155,7 @@ if isfile(default_file):
 
 for f in os.listdir(cmdargs):
     path = join(cmdargs,f)
-    if isfile(path):
+    if isfile(path) and (path.endswith(".yaml") or path.endswith(".yml")):
         yaml_doc=load(path)
         validate(yaml_doc)
         filename, file_extension = splitext(f)
