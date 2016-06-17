@@ -4,8 +4,8 @@
 HOST=${SENSU_HOST:-'127.0.0.1'}
 PORT=${SENSU_PORT:-'3030'}
 
-STATUS=$EXIT_CODE
-if [[ $EXIT_CODE -ne 0 ]]; then
+STATUS=${EXIT_CODE:-2}
+if [[ $STATUS -ne 0 ]]; then
     STATUS=2
 fi
 
