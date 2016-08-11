@@ -8,7 +8,7 @@ query_pods(){
 
 oldest_pod(){
   query_pods -o=custom-columns=STATUS:.status.startTime,NAME:.metadata.name,CONTAINER_STATUS:.status.containerStatuses \
-   | grep -v '\[\]' | sort | head -n1 | awk '{ print $5 }'
+   | grep -v '\[\]' | sort | head -n1 | awk '{ print $2 }'
 }
 
 get_pod(){
