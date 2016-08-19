@@ -6,7 +6,7 @@ if [ -d "$RUNTIME_CRONS" ]; then
     ./processor/python.py $RUNTIME_CRONS
     cp /app/cron/* /etc/cron.d/
     cp /app/default/* /etc/default/
-    
+
 fi
 
 test "$RUNNER" == "kubernetes" && /app/files/verify_kubectl || true
@@ -29,7 +29,8 @@ elif [[ "$1" == "reaper" ]]; then
     dockerize -stdout /var/log/cron.log -poll cron -f
 elif [[ $# -eq 1 ]]; then
     echo 'LOCKER=""' >> /etc/default/runner
-    echo 'FOLLOW=true' >> /etc/default/runner
+    FOLLOW=${FOLLOW:-true}
+    echo "FOLLOW=$TRUE" >> /etc/default/runner
     echo 'ALERTER=stdout' >> /etc/default/runner
     /app/processor/runner $1
     exit
