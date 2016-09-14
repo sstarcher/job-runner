@@ -3,7 +3,7 @@ MAINTAINER shanestarcher@gmail.com
 
 #Docker Hub does not support docker 1.9 yet change back to ARG https://github.com/docker/hub-feedback/issues/460
 ENV DOCKERIZE_VERSION=0.2.0
-ENV KUBERNETES_VERSION=1.3.4
+ENV KUBERNETES_VERSION=1.3.6
 ENV COMPOSE_VERSION=1.6.2
 
 RUN \
