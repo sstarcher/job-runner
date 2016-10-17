@@ -28,10 +28,8 @@ RUN \
     chmod +x /usr/local/bin/docker-compose
 
 RUN \
-    curl -SL https://github.com/kubernetes/kubernetes/releases/download/v${KUBERNETES_VERSION}/kubernetes.tar.gz \
-    | tar xz kubernetes/platforms/linux/amd64/kubectl &&\
-    mv kubernetes/platforms/linux/amd64/kubectl /usr/local/bin &&\
-    rm -rf kubernetes
+    curl -SL https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl &&\
+    chmod +x /usr/local/bin/kubectl
 
 ADD files/compose2kube /usr/local/bin/compose2kube
 ADD files/reaper_cron /etc/cron.d/
