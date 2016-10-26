@@ -5,7 +5,7 @@ machine:
     - docker    
 
 test:
-  pre:
+  override:
     - docker build -t ${CIRCLE_SHA1} .
 
 deployment:
