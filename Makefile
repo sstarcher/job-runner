@@ -1,7 +1,9 @@
-
 .jobs:
 	./processor/python.py example-jobs
 
-all:
+clean:
 	rm -rf .jobs
-	./processor/python.py example-jobs
+
+all: clean .jobs
+
+.PHONY: clean all
