@@ -1,0 +1,23 @@
+machine:
+  environment:
+    IMAGE: "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+  services:
+    - docker    
+
+test:
+  override:
+    - docker build -t ${CIRCLE_SHA1} .
+
+deployment:
+  master: 
+    branch: master
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PWD
+      - docker tag ${CIRCLE_SHA1} ${IMAGE}:latest
+      - docker push ${IMAGE}:latest
+  branches:
+    branch: /v.*/
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PWD
+      - docker tag ${CIRCLE_SHA1} ${IMAGE}:$CIRCLE_BRANCH
+      - docker push $IMAGE:$CIRCLE_BRANCH
