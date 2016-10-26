@@ -1,0 +1,46 @@
+#!/bin/bash -e
+
+env -u 'affinity:container' -u 'no_proxy' > /etc/default/runner
+
+chmod 0644 /etc/cron.d/*
+
+if [[ -z "$1" ]]; then
+    echo 'Running cron jobs'
+    ./verify_kubectl || true
+
+    if [ -n "$WHITELIST" ]; then
+        pushd '/etc/cron.d/' > /dev/null
+        for filename in *
+        do
+            FILE="${filename%.*}"
+            if [[ $WHITELIST != *"$FILE"* ]]; then
+              rm ${FILE}
+            fi
+        done
+        popd > /dev/null
+    fi
+
+    dockerize -stdout /var/log/cron.log -poll cron -f
+elif [[ $# -eq 1 ]]; then
+    echo 'LOCKER=""' >> /etc/default/runner
+    FOLLOW=${FOLLOW:-true}
+    echo "FOLLOW=${FOLLOW}" >> /etc/default/runner
+    echo 'ALERTER=stdout' >> /etc/default/runner
+    ./runner $1
+else
+    export LOCKER=''
+    export FOLLOW=false
+    for VAR in "$@"
+    do
+        echo "Starting $VAR"
+        ./runner $VAR &
+        echo "Started $VAR"
+    done
+
+    for job in `jobs -p`
+    do
+        wait $job || let "FAIL+=1"
+    done
+
+    echo "Failures - $FAIL"
+fi

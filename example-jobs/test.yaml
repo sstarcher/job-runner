@@ -1,34 +1,14 @@
----
-Configuration: #This block is used to set environment variables that are used by the job runner scripts themselves
-  TEST: 'TEST'
-  PULL_POLICY: 'IfNotPresent' #Used to set the imagepullpolicy option for k8s. options are {Always|Never|IfNotPresent}
-  #SCHEDULE: nil #The SCHEDULED key will disable cron based job scheduling for everything in this job
-
-# Top level keys are used for groupings
-# All
-CronExamples: #Every value directly under this level are inherited by the jobs
-  image: debian:jessie #This value is overriding what is set in the DEFAULTS.yaml
-  mem_limit: 2000MB
-  #The $job key is a unique value that gets injected in based off of the unique key of the job
-  command: echo $job
-  Jobs: #The actual jobs are always specified under a key named Jobs
-    - EveryMinute:
-        mem_limit: 2000MB
-        time: '* * * * *'
-    - SingleLine: '* * * * *' # If the job does not define a hash we assume this is the cron expression
-    - MultipleValues:
-        cpu_shares: 512 # Based on 1 core = 1024
-        time: '* * * * *'
-        command: echo $job $job #This value overrides what is set above in the root CronExamples
 
 
-# This is just a secondary grouping
 # This job inherits and uses the defaults specified in DEFAULTS.yaml
 TestDefaults:
   Jobs:
     - DefaultTest: 
+        image: debian:latest
         time: '* * * * *'
         command: sleep 10
+
+# This is just a secondary grouping
 Failure:
   Jobs:
     - InvalidCommand:

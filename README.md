@@ -1,5 +1,5 @@
 # The Concept
-**Stitch together a Docker job scheduler, distributed locking, task runner, and alerting system**
+**Stitch together a Docker job scheduler, distributed locking, task runner**
 
 
 Project: [https://github.com/sstarcher/job-runner]
@@ -13,8 +13,7 @@ Docker image: [https://registry.hub.docker.com/u/sstarcher/job-runner/]
 
 * Job Scheduler: Cron
 * Distributed Locking: Consul
-* Task Runners: Docker, Kubernetes
-* Job Alerting: Sensu
+* Task Runners: Kubernetes
 
 
 ### Run Methods
@@ -23,24 +22,17 @@ Docker image: [https://registry.hub.docker.com/u/sstarcher/job-runner/]
   * Cron functionality can be disabled for an entire jobs yaml file by adding `SCHEDULED` under the configuration for a job yaml
 * Single Job
   * If a job name is specified it will run the job, tail the logs, and exit when the job is finished.
-  * Lockers and Alerters are disabled in this mode
+  * Lockers are disabled in this mode
 
 ### Deployment Methods
-* Docker
-  * docker run sstarcher/job-runner:latest
-
-* Kubernetes
-  * Example pod for running under Kubernetes
 
 ```
 apiVersion: v1
-kind: ReplicationController
+kind: Deployment
 metadata:
   name: job-runner
 spec:
   replicas: 1
-  selector:
-    name: job-runner
   template:
     metadata:
       labels:
@@ -49,21 +41,12 @@ spec:
       containers:
       - name: job-runner
         image: sstarcher/job-runner:latest
-        env:
-        - name: RUNNER
-          value: kubernetes
-        - name: KUBERNETES_MASTER
-          value: http://kubernetes:8080
 ```
 
 
-### Runners
-* Docker
-  * Mount either the docker socket or set DOCKER_HOST
-* Kubernetes
+### Runner Kubernetes
   * Set `KUBERNETES_MASTER` to your Kubernetes cluster url example `http://127.0.0.1:8080`
-  * compose2kube binary has been built from - https://github.com/sstarcher/compose2kube
-  * IGNORE_OVERRUN - if this variable is false if a job is running and a new job is launched of the same name this will alert to the  alerter
+
 
 ### Lockers
 * Consul
@@ -71,20 +54,8 @@ spec:
   * CONSUL_PORT to the port your cluster is listening on - default `8500`
 
 
-### Alerters
-* Sensu
-  * SENSU_HOST to an address for Sensu - default `127.0.0.1`
-  * SENSU_PORT to the port Sensu is listening on for the client - default `3030`
-  * KIBANA_HOST optional URL.  If set a Kibana link will be sent to the sensu data
-
-### Reapers
-* Kubernetes
-  * Will delete any pods containing a "jobrunner" label
-  * Processes any alerting logic needed 
-
 ### Configuration
-* Alerters, Lockers are disabled by default
-* Docker is the default runner
+* Lockers are disabled by default
 * Example job formats are in the `example-jobs` folder
 * Job names must be unique
 * example-jobs
