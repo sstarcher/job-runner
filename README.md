@@ -1,6 +1,11 @@
 # The Concept
 **Stitch together a Docker job scheduler, distributed locking, task runner**
 
+[![CircleCI](https://circleci.com/gh/sstarcher/job-runner.svg?style=svg)](https://circleci.com/gh/sstarcher/job-runner)
+[![](https://imagelayers.io/badge/sstarcher/job-runner:latest.svg)](https://imagelayers.io/?images=sstarcher/job-runner:latest 'Get your own badge on imagelayers.io')
+[![Docker Registry](https://img.shields.io/docker/pulls/sstarcher/job-runner.svg)](https://registry.hub.docker.com/u/sstarcher/job-runner)&nbsp;
+
+This repo outputs reaps and alerts on finished kubernetes jobs.
 
 Project: [https://github.com/sstarcher/job-runner]
 (https://github.com/sstarcher/job-runner)
@@ -8,8 +13,6 @@ Project: [https://github.com/sstarcher/job-runner]
 Docker image: [https://registry.hub.docker.com/u/sstarcher/job-runner/]
 (https://registry.hub.docker.com/u/sstarcher/job-runner/)
 
-[![](https://badge.imagelayers.io/sstarcher/job-runner:latest.svg)](https://imagelayers.io/?images=sstarcher/job-runner:latest 'Get your own badge on imagelayers.io')
-[![Docker Registry](https://img.shields.io/docker/pulls/sstarcher/job-runner.svg)](https://registry.hub.docker.com/u/sstarcher/job-runner)&nbsp;
 
 * Job Scheduler: Cron
 * Distributed Locking: Consul
@@ -19,9 +22,8 @@ Docker image: [https://registry.hub.docker.com/u/sstarcher/job-runner/]
 ### Run Methods
 * Cron
   * If ran with no command argument it will start in cron mode and run on the cron schedule.  
-  * Cron functionality can be disabled for an entire jobs yaml file by adding `SCHEDULED` under the configuration for a job yaml
 * Single Job
-  * If a job name is specified it will run the job, tail the logs, and exit when the job is finished.
+  * If a job name is specified it will run the job and print out the pod name
   * Lockers are disabled in this mode
 
 ### Deployment Methods
