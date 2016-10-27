@@ -66,9 +66,13 @@ def merge(source, destination):
 def convert(file):
     command = ['kompose', '--suppress-warnings',
                '-f', file, 'convert', '--rc', '--stdout', '--yaml']
-    res = subprocess.check_output(command, stderr=subprocess.STDOUT)
     try:
+        res = subprocess.check_output(command, stderr=subprocess.STDOUT)
         return yaml.safe_load(res)
+    except subprocess.CalledProcessError as err:
+        print(file)
+        with open(file, 'r') as fin:
+            print(fin.read())
     except yaml.scanner.ScannerError as err:
         print(' '.join(command))
         print(res)
@@ -111,7 +115,7 @@ def compose(file_name, yaml_doc):
             dump = {'environment': {'job': jobName}}
 
             merge(defaults, dump)
-            time = None
+            time = dump.pop('time', None)
             if isinstance(jobData, str):
                 time = jobData
             else:
