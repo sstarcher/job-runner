@@ -146,7 +146,7 @@ def compose(file_name, yaml_doc):
             stream.close()
 
             if time:
-                text = "{0} {1} /app/processor/runner {2}" \
+                text = "{0} {1} ./runner {2}" \
                        " >> /var/log/cron.log 2>&1\n"
                 cron.write(text.format(time, user, jobName))
     cron.write('#Cron needs a newline at the end')
