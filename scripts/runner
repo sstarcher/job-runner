@@ -1,13 +1,14 @@
 #!/bin/bash
 set -a
-JOB=${1,,}
 
 source /etc/default/runner
-if [ ! -f ./job/${JOB}.yaml ]; then
+if [ ! -f ./job/${1}.yaml ]; then
     echo "The specified job does not exist [${JOB}]"
     exit 1
 fi
 
+# Lowercase job
+JOB=${1,,}
 #Ensure we have a lock to run
 case "$LOCKER" in
     consul)
