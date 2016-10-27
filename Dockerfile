@@ -34,15 +34,15 @@ RUN curl -SL -o /app/lockers/cronsul https://raw.githubusercontent.com/EvanKrall
 
 
 ADD processor /app/processor
-RUN pip install -r processor/requirements.txt
+RUN pip install -r /app/processor/requirements.txt
 
 ADD scripts/* /app/
 
 
 ONBUILD ADD jobs /app/jobs
 ONBUILD RUN /app/processor/python.py /app/jobs &&\
-    cp /app/.jobs/cron/* /etc/cron.d/ &&\
-    mv /app/.jobs/job /app/ &&\
+    cp /.jobs/cron/* /etc/cron.d/ &&\
+    mv /.jobs/job /app/ &&\
     rm -rf /app/jobs
 
 ENV LOCKER ''
