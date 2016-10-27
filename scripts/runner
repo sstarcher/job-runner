@@ -1,18 +1,17 @@
 #!/bin/bash
 set -a
+JOB=${1,,}
 
 source /etc/default/runner
-if [ ! -f ./job/${1}.yaml ]; then
+if [ ! -f /app/job/${JOB}.yaml ]; then
     echo "The specified job does not exist [${JOB}]"
     exit 1
 fi
 
-# Lowercase job
-JOB=${1,,}
 #Ensure we have a lock to run
 case "$LOCKER" in
     consul)
-        export CONSUL_HOST; ./lockers/cronsul $JOB true #Run this in a subshell unlike everything else
+        export CONSUL_HOST; /app/lockers/cronsul $JOB true #Run this in a subshell unlike everything else
         LOCKED=$?
         ;;
     *)
@@ -24,7 +23,7 @@ if [ $LOCKED -eq 0 ]; then
     #Run our commands
     START=$(date +"%Y-%m-%dT%H:%M:%SZ")
     echo "[$JOB] Running @ $START"
-    . ./kubernetes_runner
+    . /app/kubernetes_runner
 
     if [ "$EXIT_CODE" != 0 ]; then
       echo "$JOB $OUTPUT $STATUS"
@@ -35,7 +34,7 @@ fi
 
 case "$LOCKER" in
     consul)
-        export CONSUL_HOST; ./lockers/cronsul-cleanup > /dev/null
+        export CONSUL_HOST; /app/lockers/cronsul-cleanup > /dev/null
         ;;
     *)
 esac

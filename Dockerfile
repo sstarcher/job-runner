@@ -33,7 +33,6 @@ RUN curl -SL -o /app/lockers/cronsul https://raw.githubusercontent.com/EvanKrall
     chmod +x /app/lockers/cronsul
 
 
-WORKDIR /app
 ADD processor /app/processor
 RUN pip install -r processor/requirements.txt
 
@@ -41,7 +40,7 @@ ADD scripts/* /app/
 
 
 ONBUILD ADD jobs /app/jobs
-ONBUILD RUN ./processor/python.py /app/jobs &&\
+ONBUILD RUN /app/processor/python.py /app/jobs &&\
     cp /app/.jobs/cron/* /etc/cron.d/ &&\
     mv /app/.jobs/job /app/ &&\
     rm -rf /app/jobs
@@ -50,4 +49,4 @@ ENV LOCKER ''
 ENV CONSUL_HOST ''
 ENV WHITELIST ''
 
-ENTRYPOINT ["./start"]
+ENTRYPOINT ["/app/start"]
