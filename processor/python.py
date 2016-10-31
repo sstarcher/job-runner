@@ -141,17 +141,18 @@ def compose(file_name, yaml_doc):
                 pod['apiVersion'] = 'extensions/v1beta1'
                 pod.pop('status')
                 pod['spec'].pop('replicas')
+                if 'spec' in config:
+                    merge(config['spec'], pod['spec']['template']['spec'])
+                if 'annotations' in config:
+                    pod['metadata']['annotations'] = {}
+                    merge(config['annotations'],
+                          pod['metadata']['annotations'])
+
                 for container in pod['spec']['template']['spec']['containers']:
                     if container['image'].endswith(":latest"):
                         container['imagePullPolicy'] = 'Always'
 
             stream = file(".jobs/job/" + jobName + ".yaml", 'w')
-            if 'spec' in config:
-                merge(config['spec'], pod['spec'])
-            if 'annotations' in config:
-                pod['metadata']['annotations'] = {}
-                merge(config['annotations'], pod['metadata']['annotations'])
-
             yaml.dump(pod, stream, default_flow_style=False)
             stream.close()
 
