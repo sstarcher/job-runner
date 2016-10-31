@@ -1,5 +1,10 @@
 #This file can not contain job
 #All of the top level keys in this file are interested into each job
+Configuration: #This block is used to set environment variables that are used by the job runner scripts themselves
+  spec:
+    nodeSelector: 
+      usage: global_default
+
 command: echo $job
 restart: 'no'
 image: debian:jessie

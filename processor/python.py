@@ -91,7 +91,7 @@ def compose(file_name, yaml_doc):
     if not os.path.exists('.jobs/job'):
         os.makedirs('.jobs/job')
 
-    config = copy.copy(global_config)
+    config = copy.deepcopy(global_config)
     merge(yaml_doc.pop("Configuration", {}), config)
 
     cron_file = ".jobs/cron/" + file_name.lower()
@@ -146,6 +146,12 @@ def compose(file_name, yaml_doc):
                         container['imagePullPolicy'] = 'Always'
 
             stream = file(".jobs/job/" + jobName + ".yaml", 'w')
+            if 'spec' in config:
+                merge(config['spec'], pod['spec'])
+            if 'annotations' in config:
+                pod['metadata']['annotations'] = {}
+                merge(config['annotations'], pod['metadata']['annotations'])
+
             yaml.dump(pod, stream, default_flow_style=False)
             stream.close()
 

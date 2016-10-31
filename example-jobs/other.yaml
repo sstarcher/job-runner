@@ -1,6 +1,11 @@
 ---
 Configuration: #This block is used to set environment variables that are used by the job runner scripts themselves
-  TEST: 'TEST'
+  spec:
+    nodeSelector: 
+      usage: worker
+  annotations:
+    job-reaper.github.sstarcher.io/config: test
+
 
 # Top level keys are used for groupings
 # All
