@@ -21,26 +21,13 @@ if [[ -z "$1" ]]; then
     fi
 
     dockerize -stdout /var/log/cron.log -poll cron -f
-elif [[ $# -eq 1 ]]; then
-    echo 'LOCKER=""' >> /etc/default/runner
-    FOLLOW=${FOLLOW:-true}
-    echo "FOLLOW=${FOLLOW}" >> /etc/default/runner
-    echo 'ALERTER=stdout' >> /etc/default/runner
-    /app/runner $1
 else
     export LOCKER=''
     export FOLLOW=false
     for VAR in "$@"
     do
-        echo "Starting $VAR"
-        /app/runner $VAR &
-        echo "Started $VAR"
+        JOB=${VAR,,}
+        echo "---"
+        cat /app/job/${JOB}.yaml
     done
-
-    for job in `jobs -p`
-    do
-        wait $job || let "FAIL+=1"
-    done
-
-    echo "Failures - $FAIL"
 fi

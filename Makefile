@@ -9,6 +9,8 @@ clean:
 
 build:
 	docker build -t sstarcher/job-runner:${TAG} .
+
+deploy:
 	docker push sstarcher/job-runner:${TAG}
 
 all: clean .jobs
