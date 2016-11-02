@@ -138,7 +138,7 @@ def compose(file_name, yaml_doc):
             # Set image pull policy to always if image is latest
             for pod in pods['items']:
                 pod['kind'] = 'Job'
-                pod['apiVersion'] = 'extensions/v1beta1'
+                pod['apiVersion'] = 'batch/v1'
                 pod.pop('status')
                 pod['spec'].pop('replicas')
                 if 'spec' in config:
