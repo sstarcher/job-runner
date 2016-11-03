@@ -1,17 +1,14 @@
-FROM debian:jessie
+FROM debian:stable
 MAINTAINER shanestarcher@gmail.com
 
 #Docker Hub does not support docker 1.9 yet change back to ARG https://github.com/docker/hub-feedback/issues/460
 ENV DOCKERIZE_VERSION=0.2.0
-ENV KUBERNETES_VERSION=1.4.0
-ENV COMPOSE_VERSION=1.6.2
+ENV KUBERNETES_VERSION=1.4.5
+ENV KOMPOSE_VERSION=0.1.1
 
 RUN \
     apt-get update && \
-    apt-get install -y curl cron python python-pip netcat && \
-    pip install PyYAML && \
-    pip install chkcrontab
-
+    apt-get install -y curl cron python-pip
 
 RUN \
     mkdir -p /usr/local/bin/ &&\
@@ -19,43 +16,37 @@ RUN \
     | tar xzC /usr/local/bin
 
 RUN \
-    echo "deb http://http.debian.net/debian jessie-backports main" > /etc/apt/sources.list.d/backports.list && \
-    apt-get update && \
-    apt-get install -y docker.io
-
-RUN \
-    curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&\
-    chmod +x /usr/local/bin/docker-compose
+    curl -SL https://github.com/kubernetes-incubator/kompose/releases/download/v${KOMPOSE_VERSION}/kompose_linux-amd64.tar.gz \
+    | tar xzC /usr/local/bin/ &&\
+    mv /usr/local/bin/kompose*/kompose /usr/local/bin &&\
+    rm -rf /usr/local/bin/kompose_linux-amd64
 
 RUN \
     curl -SL https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl &&\
     chmod +x /usr/local/bin/kubectl
 
-ADD files/compose2kube /usr/local/bin/compose2kube
-ADD files/reaper_cron /etc/cron.d/
-
-WORKDIR /app
-ADD . /app
 
 RUN mkdir -p /app/lockers
 RUN curl -SL -o /app/lockers/cronsul-cleanup https://raw.githubusercontent.com/EvanKrall/cronsul/master/cronsul-cleanup &&\
     chmod +x /app/lockers/cronsul-cleanup
 RUN curl -SL -o /app/lockers/cronsul https://raw.githubusercontent.com/EvanKrall/cronsul/master/cronsul &&\
     chmod +x /app/lockers/cronsul
-RUN mkdir /app/compose
 
 
-ONBUILD ADD jobs jobs
-ONBUILD RUN ./processor/python.py /app/jobs &&\
-    cp /app/cron/* /etc/cron.d/ &&\
-    cp /app/default/* /etc/default/
+ADD processor /app/processor
+RUN pip install -r /app/processor/requirements.txt
 
-ENV IGNORE_OVERRUN false
-ENV RUNNER docker
-ENV ALERTER ''
+ADD scripts/* /app/
+
+
+ONBUILD ADD jobs /app/jobs
+ONBUILD RUN /app/processor/python.py /app/jobs &&\
+    cp /.jobs/cron/* /etc/cron.d/ &&\
+    mv /.jobs/job /app/ &&\
+    rm -rf /app/jobs
+
 ENV LOCKER ''
-ENV SENSU_JIT ''
-ENV K8S ''
 ENV CONSUL_HOST ''
+ENV WHITELIST ''
 
-ENTRYPOINT ["/app/processor/start"]
+ENTRYPOINT ["/app/start"]

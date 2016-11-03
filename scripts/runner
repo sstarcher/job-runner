@@ -1,0 +1,40 @@
+#!/bin/bash
+set -a
+JOB=${1,,}
+
+source /etc/default/runner
+if [ ! -f /app/job/${JOB}.yaml ]; then
+    echo "The specified job does not exist [${JOB}]"
+    exit 1
+fi
+
+#Ensure we have a lock to run
+case "$LOCKER" in
+    consul)
+        export CONSUL_HOST; /app/lockers/cronsul $JOB true #Run this in a subshell unlike everything else
+        LOCKED=$?
+        ;;
+    *)
+      echo "[$JOB] Skipping lock check"
+      LOCKED=0
+esac
+
+if [ $LOCKED -eq 0 ]; then
+    #Run our commands
+    START=$(date +"%Y-%m-%dT%H:%M:%SZ")
+    echo "[$JOB] Running @ $START"
+    . /app/kubernetes_runner
+
+    if [ "$EXIT_CODE" != 0 ]; then
+      echo "$JOB $OUTPUT $STATUS"
+    fi
+else
+    echo "[$JOB] Locked via ${LOCKER}"
+fi
+
+case "$LOCKER" in
+    consul)
+        export CONSUL_HOST; /app/lockers/cronsul-cleanup > /dev/null
+        ;;
+    *)
+esac

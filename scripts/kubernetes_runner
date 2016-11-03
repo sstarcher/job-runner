@@ -1,0 +1,35 @@
+#!/bin/bash
+# Set KUBERNETES_MASTER to the URL of your cluster example http://kubemaster:8080
+export KUBERNETES_MASTER
+
+if [[ -z $(kubectl get jobs --selector=service=${JOB} 2> /dev/null ) ]]; then
+  OUTPUT=$(kubectl create -f /app/job/${JOB}.yaml); RESULT=$?
+  rm -rf k8s_${JOB}
+
+  if [ $RESULT -ne 0 ]; then
+    EXIT_CODE=101
+  fi
+else
+    EXIT_CODE=100
+    echo "[${JOB}] - OVERRUN"
+    if [[ "$FOLLOW" == *"true"* ]] ; then
+      POD_NAME=$(kubectl get pods --selector=service=$JOB -o=jsonpath='{.items[*].metadata.name}')
+      echo "kubectl logs -f $POD_NAME"
+    fi
+  return
+fi
+
+#Ensure the pod is actually registered. Avoids a possible race condition
+until kubectl get jobs --selector=service=${JOB} &> /dev/null
+do
+  sleep 0.1
+done
+
+
+if [[ "$FOLLOW" != *"true"* ]] ; then
+  OUTPUT="Running"
+  EXIT_CODE=0
+else
+  POD_NAME=$(kubectl get pods --selector=service=$JOB -o=jsonpath='{.items[*].metadata.name}')
+  echo "kubectl logs -f $POD_NAME"
+fi

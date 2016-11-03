@@ -8,6 +8,10 @@ from os.path import isfile, join, splitext
 import copy
 import re
 import chkcrontab_lib as check
+import subprocess
+import tempfile
+
+
 
 def load(yaml_file):
     f = open(yaml_file)
@@ -15,31 +19,26 @@ def load(yaml_file):
     f.close()
     return data
 
+
 def validate_cron(file_path):
     whitelisted_users = None
     log = check.LogCounter()
     return check.check_crontab(file_path, log, whitelisted_users)
 
 
-def validate(yaml_doc):
-    return
-    #TODO validate all the things
-    #TODO consider using pykwalify
-    #TODO validate cron time format
-    #TODO validate job name works for K8S aka no _
-    #sys.exit(1)
-
 def convert_memlimit(value):
     if not isinstance(value, str):
         return value
-    match = re.match(r"(\d+)[Mm][Bb]",value)
+    match = re.match(r"(\d+)[Mm][Bb]", value)
     if match:
-        return int(match.group(1)) * pow(10,6)
+        return int(match.group(1)) * pow(10, 6)
 
     return value
+
 
 def convert_cpushares(value):
     return value
+
 
 def substitute_all(values, string):
     if isinstance(string, str):
@@ -47,6 +46,7 @@ def substitute_all(values, string):
         return template.safe_substitute(values)
     else:
         return string
+
 
 def merge(source, destination):
     """
@@ -62,36 +62,60 @@ def merge(source, destination):
 
     return destination
 
+
+def convert(file):
+    command = ['kompose', '--suppress-warnings',
+               '-f', file, 'convert', '--rc', '--stdout', '--yaml']
+    try:
+        res = subprocess.check_output(command, stderr=subprocess.STDOUT)
+        return yaml.safe_load(res)
+    except subprocess.CalledProcessError as err:
+        print(file)
+        with open(file, 'r') as fin:
+            print(fin.read())
+    except yaml.scanner.ScannerError as err:
+        print(' '.join(command))
+        print(res)
+        raise err
+
+
 def compose(file_name, yaml_doc):
-    user='root'
+    user = 'root'
 
-    if not os.path.exists('default'):
-        os.makedirs('default')
+    if not os.path.exists('.jobs'):
+        os.makedirs('.jobs')
 
-    if not os.path.exists('compose'):
-        os.makedirs('compose')
+    if not os.path.exists('.jobs/cron'):
+        os.makedirs('.jobs/cron')
 
-    config = copy.copy(global_config)
+    if not os.path.exists('.jobs/job'):
+        os.makedirs('.jobs/job')
+
+    config = copy.deepcopy(global_config)
     merge(yaml_doc.pop("Configuration", {}), config)
 
-    if not os.path.exists('cron'):
-        os.makedirs('cron')
-    cron_file = "cron/"+file_name.lower()
+    cron_file = ".jobs/cron/" + file_name.lower()
     cron = file(cron_file, 'w')
     cron.write('SHELL=/bin/sh\n')
-    cron.write('PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n')
+    cron.write('PATH=/usr/local/sbin:/usr/local/bin'
+               ':/sbin:/bin:/usr/sbin:/usr/bin\n')
 
-    for grouping, data in yaml_doc.iteritems(): # use safe_load instead load
+    for grouping, data in yaml_doc.iteritems():  # use safe_load instead load
         defaults = copy.copy(global_defaults)
         jobs = data.pop('Jobs')
         defaults.update(data)
 
         for job in jobs:
             jobName, jobData = job.popitem()
+            jobName = jobName.lower()
+            if os.path.exists('./jobs/job/' + jobName):
+                print('A job of this name already exists {0}'.format(jobName))
+                exit(2)
+
             dump = {'environment': {'job': jobName}}
 
             merge(defaults, dump)
-            time = None
+            time = dump.pop('time', None)
             if isinstance(jobData, str):
                 time = jobData
             else:
@@ -105,27 +129,37 @@ def compose(file_name, yaml_doc):
                 dump["mem_limit"] = convert_memlimit(dump["mem_limit"])
                 dump['environment']['mem_limit'] = str(dump['mem_limit'])
 
-            if "cpu_shares" in dump:
-                dump["cpu_shares"] = convert_cpushares(dump["cpu_shares"])
-                dump['environment']['cpu_shares'] = str(dump['cpu_shares'])
+            stream = tempfile.NamedTemporaryFile()
+            # Write a YAML representation of data to 'document.yaml'.
+            yaml.dump({jobName: dump}, stream, default_flow_style=False)
+            pods = convert(stream.name)
+            stream.close()
 
-            if os.path.exists('default/'+jobName):
-                print('A job of this name already exists {0}'.format(jobName))
-                exit(2)
+            # Set image pull policy to always if image is latest
+            for pod in pods['items']:
+                pod['kind'] = 'Job'
+                pod['apiVersion'] = 'batch/v1'
+                pod.pop('status')
+                pod['spec'].pop('replicas')
+                if 'spec' in config:
+                    merge(config['spec'], pod['spec']['template']['spec'])
+                if 'annotations' in config:
+                    pod['metadata']['annotations'] = {}
+                    merge(config['annotations'],
+                          pod['metadata']['annotations'])
 
+                for container in pod['spec']['template']['spec']['containers']:
+                    if container['image'].endswith(":latest"):
+                        container['imagePullPolicy'] = 'Always'
 
-            job_env = file('default/'+jobName, 'w')
-            for key, value in config.iteritems():
-                job_env.write('{0}="{1}"\n'.format(key,value))
-            job_env.close
-
-
-            stream = file("compose/"+jobName+".yaml", 'w')
-            yaml.dump({jobName: dump}, stream, default_flow_style=False)    # Write a YAML representation of data to 'document.yaml'.
+            stream = file(".jobs/job/" + jobName + ".yaml", 'w')
+            yaml.dump(pod, stream, default_flow_style=False)
             stream.close()
 
             if time:
-                cron.write("{0} {1} /app/processor/runner {2} >> /var/log/cron.log 2>&1\n".format(time,user, jobName))
+                text = "{0} {1} /app/runner {2}" \
+                       " >> /var/log/cron.log 2>&1\n"
+                cron.write(text.format(time, user, jobName))
     cron.write('#Cron needs a newline at the end')
     cron.close()
 
@@ -133,10 +167,6 @@ def compose(file_name, yaml_doc):
     if validation_log:
         print(validation_log)
         exit(9)
-
-    if 'SCHEDULED' in config: #If the scheduled key exists skip the cron file
-        os.remove("cron/"+file_name.lower())
-
 
 
 global global_defaults
@@ -147,17 +177,18 @@ global_config = {}
 
 cmdargs = sys.argv[1]
 
-default_file="{0}/DEFAULTS.yaml".format(cmdargs)
+default_file = "{0}/DEFAULTS.yaml".format(cmdargs)
+
+
 if isfile(default_file):
     loaded_defaults = load(default_file)
     global_config = loaded_defaults.pop("Configuration", {})
     global_defaults = loaded_defaults
 
 for f in os.listdir(cmdargs):
-    path = join(cmdargs,f)
+    path = join(cmdargs, f)
     if isfile(path) and (path.endswith(".yaml") or path.endswith(".yml")):
-        yaml_doc=load(path)
-        validate(yaml_doc)
+        yaml_doc = load(path)
         filename, file_extension = splitext(f)
         if filename != 'DEFAULTS':
             compose(filename, yaml_doc)

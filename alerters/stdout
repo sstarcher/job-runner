@@ -1,4 +1,0 @@
-#!/bin/bash
-#JOB OUTPUT STATUS
-
-dockerize -template /app/templates/sensu.tmpl

@@ -1,4 +1,0 @@
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-* * * * * root /app/processor/reap  >> /var/log/cron.log 2>&1
-#This file needs to have a new line at the end
