@@ -139,7 +139,6 @@ def compose(file_name, yaml_doc):
             for pod in pods['items']:
                 pod['kind'] = 'Job'
                 pod['apiVersion'] = 'batch/v1'
-                print pod
 
                 pod.pop('status')
                 pod['spec'].pop('replicas')
