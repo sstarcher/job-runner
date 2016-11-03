@@ -139,6 +139,8 @@ def compose(file_name, yaml_doc):
             for pod in pods['items']:
                 pod['kind'] = 'Job'
                 pod['apiVersion'] = 'batch/v1'
+                print pod
+
                 pod.pop('status')
                 pod['spec'].pop('replicas')
                 if 'spec' in config:
@@ -149,8 +151,13 @@ def compose(file_name, yaml_doc):
                           pod['metadata']['annotations'])
 
                 for container in pod['spec']['template']['spec']['containers']:
+                    container["resources"] = {"limits": {}}
                     if container['image'].endswith(":latest"):
                         container['imagePullPolicy'] = 'Always'
+                    if "mem_limit" in dump:
+                        container["resources"]["limits"]['memory'] = str(dump["mem_limit"]/1000/1000) + "Mi"
+                    if "cpu_shares" in dump:
+                        container["resources"]["limits"]['cpu'] = str(dump["cpu_shares"]) + "m"
 
             stream = file(".jobs/job/" + jobName + ".yaml", 'w')
             yaml.dump(pod, stream, default_flow_style=False)
